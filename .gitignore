@@ -1,4 +1,6 @@
 dataset
+__pycache__/
+*.py[cod]
 nifti_previews/
 *.zip
 __pycache__/
