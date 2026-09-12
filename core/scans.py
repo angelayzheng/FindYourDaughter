@@ -35,6 +35,7 @@ class VolumeViewOptions:
     max_dimension: int = 192
     window: float = 400.0
     level: float = 40.0
+    min_intensity: float | None = None
     opacity: float = 0.12
 
     def __post_init__(self) -> None:
@@ -44,6 +45,8 @@ class VolumeViewOptions:
             raise ValueError("max_dimension must be an integer between 16 and 512")
         if not np.isfinite((self.window, self.level, self.opacity)).all() or self.window <= 0:
             raise ValueError("window must be positive and all display settings must be finite")
+        if self.min_intensity is not None and not np.isfinite(self.min_intensity):
+            raise ValueError("min_intensity must be finite when provided")
         if not 0 <= self.opacity <= 0.5:
             raise ValueError("opacity must be between 0 and 0.5")
 

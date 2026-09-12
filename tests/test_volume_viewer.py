@@ -66,6 +66,26 @@ class VolumeViewerTest(unittest.TestCase):
         self.assertEqual(self.viewer.volume_mapper.GetCroppingRegionPlanes()[5], 5)
         np.testing.assert_array_equal(self.data, original)
 
+    def test_min_intensity_hides_lower_volume_and_slice_values(self):
+        from desktop.volume_viewer import VolumeViewer
+
+        viewer = VolumeViewer(self.case, VolumeViewOptions(max_dimension=16, min_intensity=100))
+        self.addCleanup(viewer.close)
+        viewer.set_slice(2, 7)
+        texture = viewer.slice_actors[0][0].GetTexture().GetInput()
+        from vtk.util.numpy_support import vtk_to_numpy
+
+        pixels = vtk_to_numpy(texture.GetPointData().GetScalars()).reshape(20, 24, 3)
+        self.assertEqual(pixels[0, 0, 0], 0)
+        opacity = viewer.volume_property.GetScalarOpacity()
+        self.assertEqual(opacity.GetValue(50), 0)
+        self.assertGreater(opacity.GetValue(150), 0)
+
+    def test_min_intensity_slider_updates_threshold(self):
+        self.viewer.set_min_intensity(100)
+        self.assertEqual(self.viewer.min_intensity, 100)
+        self.assertEqual(self.viewer.volume_property.GetScalarOpacity().GetValue(50), 0)
+
     def test_empty_mask_has_no_surface(self):
         from desktop.volume_viewer import mask_surface
 

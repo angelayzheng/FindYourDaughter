@@ -169,6 +169,7 @@ they do not assume the scan is already in standard anatomical orientation.
 | Wheel over a slice           | Step through that axis                                                           |
 | Click a slice                | Move the other slice positions to that voxel                                     |
 | Window level / width sliders | Adjust CT contrast and the volume transfer function                              |
+| Minimum intensity slider     | Hide volume and slice pixels below the selected intensity                        |
 | Volume opacity slider        | Reveal or hide tissue inside the volume                                          |
 | V / M / P                    | Toggle the CT volume, mask surface, or slice planes in 3D                        |
 | C                            | Toggle a CT cutaway, keeping voxel K at or below the K slider                    |
@@ -190,8 +191,10 @@ needs a working OpenGL display driver. Rendering is for visual inspection, with
 the evaluator's SimpleITK coordinate path unchanged.
 
 `--frame` selects a 4-D frame. `--window`, `--level`, and `--opacity` set initial
-display values (defaults 400, 40, and 0.12). Window/level use scaled voxel values,
-which are HU when the CT is calibrated. Unknown spatial units remain unknown.
+display values (defaults 400, 40, and 0.12). `--min-intensity` hides lower-valued
+volume samples and renders lower-valued slice pixels black. Window/level and the
+threshold use scaled voxel values, which are HU when the CT is calibrated. Unknown
+spatial units remain unknown.
 
 ```python
 from core import ScanCase, VolumeViewOptions

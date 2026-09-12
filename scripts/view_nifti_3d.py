@@ -21,6 +21,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--max-dimension", type=int, default=192, help="Maximum sampled CT dimension, 16-512 (default: 192)")
     parser.add_argument("--window", type=float, default=400, help="Intensity window width (default: 400)")
     parser.add_argument("--level", type=float, default=40, help="Intensity window center (default: 40)")
+    parser.add_argument("--min-intensity", type=float, help="Hide volume and slice pixels below this intensity")
     parser.add_argument("--opacity", type=float, default=0.12, help="Maximum volume opacity, 0-0.5 (default: 0.12)")
     parser.add_argument("--screenshot", type=Path, help="Save an initial PNG and use this path for the S key")
     parser.add_argument("--offscreen", action="store_true", help="Save --screenshot and exit without opening the viewer")
@@ -31,7 +32,8 @@ def main(argv: list[str] | None = None) -> None:
         parser.error("--offscreen requires --screenshot")
     try:
         options = VolumeViewOptions(frame=args.frame, max_dimension=args.max_dimension,
-                                    window=args.window, level=args.level, opacity=args.opacity)
+                                    window=args.window, level=args.level,
+                                    min_intensity=args.min_intensity, opacity=args.opacity)
     except ValueError as error:
         parser.error(str(error))
     mask_path = args.mask

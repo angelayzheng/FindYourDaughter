@@ -150,4 +150,8 @@ Open a scan in the VTK desktop viewer; no browser or web server is involved:
 python scripts/view_nifti_3d.py --image dataset/subject016/orig16.nii
 ```
 
+Use `--min-intensity VALUE` to set the initial cutoff. The viewer also provides
+a live Minimum intensity slider to hide lower-intensity volume samples and
+render lower-intensity slice pixels black.
+
 See [3D viewer controls, options, and screenshots](docs/development.md#native-3d-volume-viewer) or the [development guide](docs/development.md) for details.
