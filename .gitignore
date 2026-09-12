@@ -1,2 +1,4 @@
 dataset
+__pycache__/
+*.py[cod]
 nifti_previews/
