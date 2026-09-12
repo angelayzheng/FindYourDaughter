@@ -18,6 +18,7 @@ import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 import nibabel as nib
 import numpy as np
 
@@ -122,8 +123,10 @@ def render_volume(image_path: Path, all_paths: list[Path], output_dir: Path, sho
     for index, (axis, slice_data, plane) in enumerate(zip(axes, image_slices, ("Axial", "Coronal", "Sagittal"))):
         axis.imshow(slice_data, cmap="gray", origin="lower", vmin=vmin, vmax=vmax)
         if mask_slices is not None:
-            overlay = np.ma.masked_where(mask_slices[index] <= 0, mask_slices[index])
-            axis.imshow(overlay, cmap="Reds", origin="lower", alpha=0.45, interpolation="nearest")
+            mask_slice = mask_slices[index]
+            overlay = np.ma.masked_where(~np.isfinite(mask_slice) | (mask_slice <= 0), mask_slice)
+            # A constant binary foreground otherwise maps to the pale end of Reds.
+            axis.imshow(overlay, cmap=ListedColormap(["red"]), origin="lower", alpha=0.45, interpolation="nearest")
         axis.set_title(plane)
         axis.axis("off")
 
