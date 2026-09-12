@@ -1,9 +1,9 @@
 # Development and visualization
 
 CPU-only infrastructure for detecting direct daughter arteries of the supplied
-parent-aorta mask. Detection is not implemented yet; the current backend
-validates input geometry and writes a schema-valid JSON envelope with an empty
-`daughters` list.
+parent-aorta mask. The backend validates input geometry and runs an experimental
+detector. Its accuracy on real scans remains unmeasured. See the
+[detection method and candidate review guide](artery_detection.md).
 
 ## Offline setup
 
@@ -40,9 +40,9 @@ For example, run the current valid baseline against a local case with:
 python run.py --image dataset/subject001/orig1.nii --aorta-mask dataset/subject001/mask1.nii --output prediction.json
 ```
 
-The baseline validates that the volumes share the same 3-D physical grid and
-writes the required schema. Daughter detection is the next algorithm layer;
-until it is implemented, the output contains an empty `daughters` list.
+The baseline validates input geometry and writes candidate ostia, seeds 5 mm
+along each traced branch, radii, and directions in physical LPS coordinates.
+An empty `daughters` list means no candidates passed the current filters.
 
 ### Backend input loading
 

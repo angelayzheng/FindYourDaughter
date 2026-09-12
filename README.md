@@ -1,6 +1,6 @@
 # Find Your Daughter
 
-Branchseed Challenge submission. The current backend validates input geometry and writes an empty `daughters` list; branch detection is not implemented yet.
+Branchseed Challenge submission. The backend now proposes direct daughter arteries using an experimental CPU baseline. Real-scan detection accuracy is not yet measured; see the [detection method, validation, and candidate previews](docs/artery_detection.md).
 
 The bundled offline wheels target CPython 3.14 on Windows x64. From the repository root, install dependencies:
 
@@ -20,9 +20,9 @@ Run a local case after setup:
 python run.py --image dataset/subject001/orig1.nii --aorta-mask dataset/subject001/mask1.nii --output prediction.json
 ```
 
-The baseline validates that the volumes share the same 3-D physical grid and
-writes the required schema. Daughter detection is the next algorithm layer;
-until it is implemented, the output contains an empty `daughters` list.
+The baseline validates input geometry and writes candidate ostia, seeds 5 mm
+along each traced branch, radii, and directions in physical LPS coordinates.
+An empty `daughters` list means no candidates passed the current filters.
 
 ## Dataset inspection
 
