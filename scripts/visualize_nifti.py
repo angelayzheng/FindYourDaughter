@@ -15,6 +15,7 @@ Examples
 from __future__ import annotations
 
 import argparse
+import gzip
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -28,6 +29,27 @@ NIFTI_SUFFIXES = (".nii", ".nii.gz")
 
 def is_nifti(path: Path) -> bool:
     return path.name.lower().endswith(NIFTI_SUFFIXES)
+
+
+def load_volume(path: str | Path) -> np.ndarray:
+    """Read voxel data, including gzip-compressed NIfTI files named `.nii`."""
+    path = Path(path)
+    with path.open("rb") as stream:
+        is_gzip = stream.read(2) == b"\x1f\x8b"
+    if not is_gzip:
+        return nib.load(str(path)).get_fdata(dtype=np.float32)
+
+    with gzip.open(path, "rb") as stream:
+        header = stream.read(540)
+        stream.seek(0)
+        for image_type in (nib.Nifti1Image, nib.Nifti2Image):
+            if image_type.header_class.may_contain_header(header):
+                file_map = image_type.make_file_map()
+                file_map["image"] = nib.FileHolder(fileobj=stream)
+                image = image_type.from_file_map(file_map)
+                # Materialize voxels while the decompression stream is open.
+                return image.get_fdata(dtype=np.float32)
+    raise nib.filebasedimages.ImageFileError(f"Not a NIfTI image: {path}")
 
 
 def middle_slices(volume: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -75,7 +97,7 @@ def nii_to_png(
     if axis not in (0, 1, 2):
         raise ValueError("axis must be 0, 1, or 2")
 
-    volume = nib.load(str(nii_path)).get_fdata(dtype=np.float32)
+    volume = load_volume(nii_path)
     if volume.ndim > 3:
         volume = volume[..., 0]
     if volume.ndim != 3:
@@ -105,15 +127,14 @@ def mask_for_image(image_path: Path, paths: list[Path]) -> Path | None:
 
 
 def render_volume(image_path: Path, all_paths: list[Path], output_dir: Path, show: bool) -> Path:
-    image = nib.load(str(image_path))
-    volume = image.get_fdata(dtype=np.float32)
+    volume = load_volume(image_path)
     image_slices = middle_slices(volume)
     vmin, vmax = display_limits(volume)
 
     mask_path = mask_for_image(image_path, all_paths)
     mask_slices = None
     if mask_path is not None:
-        mask = nib.load(str(mask_path)).get_fdata(dtype=np.float32)
+        mask = load_volume(mask_path)
         if mask.shape[:3] == volume.shape[:3]:
             mask_slices = middle_slices(mask)
         else:
@@ -160,14 +181,16 @@ def main() -> None:
     # Render masks too if they do not have a corresponding non-mask image.
     image_paths.extend(path for path in paths if "mask" in path.stem.lower() and not any(other.parent == path.parent and "mask" not in other.stem.lower() for other in paths))
 
+    rendered = 0
     for image_path in image_paths:
         try:
             output_path = render_volume(image_path, paths, args.output_dir, args.show)
+            rendered += 1
             print(f"Wrote {output_path}")
-        except (OSError, ValueError, nib.filebasedimages.ImageFileError) as error:
+        except (OSError, EOFError, ValueError, nib.filebasedimages.ImageFileError) as error:
             print(f"Skipped {image_path}: {error}")
 
-    print(f"Rendered {len(image_paths)} preview(s) to {args.output_dir}")
+    print(f"Rendered {rendered} preview(s) to {args.output_dir}; skipped {len(image_paths) - rendered}")
 
 
 if __name__ == "__main__":

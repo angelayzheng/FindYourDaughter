@@ -75,6 +75,9 @@ The existing NIfTI quick-look utility lives at `scripts/visualize_nifti.py`:
 python scripts/visualize_nifti.py --dataset dataset --output-dir nifti_previews
 ```
 
+The utility detects gzip compression from file contents, including the compressed
+`.nii` images and masks in subjects 016–025; renaming the dataset files is unnecessary.
+
 ## Verification
 
 Run the backend smoke tests with:
