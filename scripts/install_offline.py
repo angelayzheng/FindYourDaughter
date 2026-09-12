@@ -44,6 +44,21 @@ def main() -> int:
         if actual_hash != expected_hash:
             raise SystemExit(f"Wheel failed its SHA-256 check: {filename}")
 
+    mesa_manifest_path = ROOT / "vendor" / "mesa" / "manifest.json"
+    if not mesa_manifest_path.is_file():
+        raise SystemExit("The bundled Mesa software OpenGL manifest is missing.")
+    mesa_manifest = json.loads(mesa_manifest_path.read_text(encoding="utf-8"))
+    if mesa_manifest["platform"] != runtime["platform"]:
+        raise SystemExit("Bundled Mesa software OpenGL does not match this platform.")
+    for filename, expected_hash in mesa_manifest["files"].items():
+        library = mesa_manifest_path.parent / "win_amd64" / filename
+        if not library.is_file():
+            raise SystemExit(f"Bundled Mesa library is missing: {filename}")
+        with library.open("rb") as stream:
+            actual_hash = hashlib.file_digest(stream, "sha256").hexdigest()
+        if actual_hash != expected_hash:
+            raise SystemExit(f"Bundled Mesa library failed its SHA-256 check: {filename}")
+
     command = [sys.executable, "-m", "pip", "install", "--no-index", "--find-links", str(WHEELHOUSE)]
     for requirements in REQUIREMENTS:
         command.extend(("--requirement", str(requirements)))

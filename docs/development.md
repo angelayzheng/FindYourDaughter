@@ -23,7 +23,8 @@ machine with the same operating system, architecture, and Python version:
 python scripts/download_wheels.py
 ```
 
-The installer verifies its platform manifest and wheel SHA-256 hashes, then
+The installer verifies its platform manifest, wheel SHA-256 hashes, and bundled
+Mesa software OpenGL DLL hashes, then
 passes both `--no-index` and `--find-links` to pip, so it cannot silently reach
 PyPI during offline judging.
 
@@ -68,6 +69,35 @@ Start the Streamlit frontend with:
 ```powershell
 python -m streamlit run frontend/app.py
 ```
+
+The dashboard lists NIfTI scans in the chosen dataset folder and its immediate
+subject subfolders. Select a subject, CT file, and optional neighboring aorta
+mask. It validates image/mask geometry, then renders the existing VTK volume
+scene into the dashboard. Sidebar controls adjust the camera, opacity,
+window/level, sampling limit, MIP, and a voxel-K cutaway. The **Orthogonal
+slices** controls display the native VTK slice panels beside the 3-D view.
+Axis I, J, and K sliders move the three cross-sections; **Show slice planes in
+3D** also places those sections in the volume scene. These are voxel indices
+for browsing, not physical-space detection coordinates. Each slider or toggle
+change starts a new render automatically; download the image as PNG when ready.
+A progress bar shows elapsed rendering time, and a completion message appears
+when the image is ready. The dashboard keeps a VTK render process and its loaded
+scan alive while the selected case, frame, and CT sampling limit stay the same.
+Changing those settings rebuilds the scene and takes longer than camera or
+display adjustments. Rendering still uses the CPU-only Mesa `softpipe` driver,
+so higher CT sampling limits and large output images can take longer than a GPU.
+The browser displays a VTK-rendered image; rotation uses the camera sliders.
+If VTK cannot create its offscreen context, the dashboard explicitly reports
+the failure and shows the simpler CPU point preview instead.
+
+On Windows x64, `vendor/mesa/` supplies OSMesa and `libglapi` from Mesa3D
+24.3.4. The dashboard's VTK subprocess uses Mesa `softpipe` for software
+OpenGL, so the 3-D volume render can run on CPUs without a GPU or browser
+WebGL. The normal Windows OpenGL path failed in our headless session, and
+Mesa's `llvmpipe` driver exited with an illegal instruction; `softpipe`
+rendered the full-size subject successfully. The subprocess changes no system
+graphics settings and uses no network. The NIfTI RAS affine is used for
+display; this viewer performs no artery detection.
 
 The existing NIfTI quick-look utility lives at `scripts/visualize_nifti.py`:
 
@@ -209,8 +239,10 @@ python scripts/view_nifti_3d.py --image dataset/subject016/orig16.nii --offscree
 ```
 
 VTK is pinned in `requirements-frontend.txt`, bundled in `vendor/wheels`, and
-included in the offline installer. Importing `core` does not import VTK or open
-a window. The existing 2-D preview utility and web frontend remain separate.
+included in the offline installer. The Windows x64 Mesa DLLs are bundled in
+`vendor/mesa/` with pinned hashes. Importing `core` does not import VTK or open
+a window. The native viewer retains its interactive controls; Streamlit reuses
+its VTK volume scene as the main view.
 
 ## Verification
 
@@ -231,6 +263,7 @@ eda/                      dataset inspection utilities
 frontend/app.py           optional Streamlit entrypoint
 scripts/                  visualization and offline dependency tooling
 vendor/wheels/            bundled pip wheels for offline installation
+vendor/mesa/              bundled Windows x64 software OpenGL libraries
 run.py                    required evaluator entrypoint
 requirements-backend.txt  backend runtime dependencies
 requirements-frontend.txt visualization dependencies

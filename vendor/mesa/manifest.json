@@ -1,0 +1,10 @@
+{
+  "platform": "win-amd64",
+  "mesa_version": "24.3.4",
+  "source": "https://github.com/pal1000/mesa-dist-win/releases/download/24.3.4/mesa3d-24.3.4-release-msvc.7z",
+  "source_sha256": "7ebc711ad1896ac88ab21e142f1017f8ff035f0f342bdb72fbb5e2eb881ba363",
+  "files": {
+    "osmesa.dll": "c633b820bba8ec0dcb05466505e3c246e4c4028eaec7caf1054e707c8eb3ca1f",
+    "libglapi.dll": "38c0c712138e313f72b9fa113e8bc00019915cedff5f0659471fdb63e9b3b392"
+  }
+}
