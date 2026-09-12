@@ -61,6 +61,23 @@ python eda/inspect_nifti_dataset.py dataset --output nifti_dimensions.csv
 python eda/inspect_nifti_dataset.py dataset --output nifti_dimensions.json
 ```
 
+## Voxel-intensity histograms
+
+Generate one Matplotlib histogram per CT/original volume. Values include NIfTI
+scaling and are typically Hounsfield units for calibrated CT scans:
+
+```powershell
+python eda/plot_intensity_histograms.py --dataset dataset --output-dir nifti_histograms
+```
+
+The y-axis uses a logarithmic scale by default. A dashed horizontal line marks
+the number of nonzero voxels in the paired aorta mask, and a red overlay shows
+the intensity distribution restricted to those mask voxels. The histogram range
+is the full finite range of non-padded voxels; values at or below `-2048` are
+treated as CT padding by default. Customize that threshold with `--padding-floor`
+and the bin count with `--bins`; use `--linear-y` for a linear y-axis. Add
+`--include-masks` to generate histograms for mask volumes too.
+
 ## Visualization
 
 Start the Streamlit frontend with:
