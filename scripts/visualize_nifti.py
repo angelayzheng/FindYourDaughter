@@ -10,18 +10,25 @@ Examples
     python scripts/visualize_nifti.py
     python scripts/visualize_nifti.py --dataset path/to/data --output-dir previews
     python scripts/visualize_nifti.py --show
+    python scripts/visualize_nifti.py --mode both --export-numpy
 """
 
 from __future__ import annotations
 
 import argparse
-import gzip
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 import nibabel as nib
 import numpy as np
+
+# Support both `python scripts/visualize_nifti.py` and module imports.
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from core import PreviewMode, PreviewOptions, Scan, ScanCase
+from core.preview import display_limits
 
 
 NIFTI_SUFFIXES = (".nii", ".nii.gz")
@@ -32,24 +39,8 @@ def is_nifti(path: Path) -> bool:
 
 
 def load_volume(path: str | Path) -> np.ndarray:
-    """Read voxel data, including gzip-compressed NIfTI files named `.nii`."""
-    path = Path(path)
-    with path.open("rb") as stream:
-        is_gzip = stream.read(2) == b"\x1f\x8b"
-    if not is_gzip:
-        return nib.load(str(path)).get_fdata(dtype=np.float32)
-
-    with gzip.open(path, "rb") as stream:
-        header = stream.read(540)
-        stream.seek(0)
-        for image_type in (nib.Nifti1Image, nib.Nifti2Image):
-            if image_type.header_class.may_contain_header(header):
-                file_map = image_type.make_file_map()
-                file_map["image"] = nib.FileHolder(fileobj=stream)
-                image = image_type.from_file_map(file_map)
-                # Materialize voxels while the decompression stream is open.
-                return image.get_fdata(dtype=np.float32)
-    raise nib.filebasedimages.ImageFileError(f"Not a NIfTI image: {path}")
+    """Compatibility wrapper returning the core scan's scaled NumPy tensor."""
+    return Scan.from_nifti(path).data
 
 
 def middle_slices(volume: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -62,15 +53,6 @@ def middle_slices(volume: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarra
     x, y, z = (axis // 2 for axis in volume.shape)
     # Transposing makes all plots follow the conventional image orientation.
     return volume[:, :, z].T, volume[:, y, :].T, volume[x, :, :].T
-
-
-def display_limits(volume: np.ndarray) -> tuple[float, float]:
-    """Use robust limits so a few extreme voxels do not wash out the preview."""
-    finite = volume[np.isfinite(volume)]
-    if finite.size == 0:
-        return 0.0, 1.0
-    low, high = np.percentile(finite, (1, 99))
-    return (float(low), float(high)) if high > low else (float(low), float(low + 1))
 
 
 def nii_to_png(
@@ -126,42 +108,22 @@ def mask_for_image(image_path: Path, paths: list[Path]) -> Path | None:
     return candidates[0] if len(candidates) == 1 else None
 
 
-def render_volume(image_path: Path, all_paths: list[Path], output_dir: Path, show: bool) -> Path:
-    volume = load_volume(image_path)
-    image_slices = middle_slices(volume)
-    vmin, vmax = display_limits(volume)
-
+def render_volume(
+    image_path: Path, all_paths: list[Path], output_dir: Path, show: bool,
+    *, options: PreviewOptions | None = None, export_numpy: bool = False,
+) -> Path:
+    options = options or PreviewOptions(show=show)
     mask_path = mask_for_image(image_path, all_paths)
-    mask_slices = None
-    if mask_path is not None:
-        mask = load_volume(mask_path)
-        if mask.shape[:3] == volume.shape[:3]:
-            mask_slices = middle_slices(mask)
-        else:
-            print(f"Skipping overlay for {image_path}: mask shape {mask.shape} differs from image shape {volume.shape}")
-
-    figure, axes = plt.subplots(1, 3, figsize=(12, 4), constrained_layout=True)
-    for index, (axis, slice_data, plane) in enumerate(zip(axes, image_slices, ("Axial", "Coronal", "Sagittal"))):
-        axis.imshow(slice_data, cmap="gray", origin="lower", vmin=vmin, vmax=vmax)
-        if mask_slices is not None:
-            mask_slice = mask_slices[index]
-            overlay = np.ma.masked_where(~np.isfinite(mask_slice) | (mask_slice <= 0), mask_slice)
-            # A constant binary foreground otherwise maps to the pale end of Reds.
-            axis.imshow(overlay, cmap=ListedColormap(["red"]), origin="lower", alpha=0.45, interpolation="nearest")
-        axis.set_title(plane)
-        axis.axis("off")
-
+    case = ScanCase.from_nifti(image_path, mask_path)
     # Preserve subject names and avoid collisions such as two ``orig.nii`` files.
-    output_name = f"{image_path.parent.name}_{image_path.name.replace('.nii.gz', '').replace('.nii', '')}.png"
-    output_path = output_dir / output_name
-    title = image_path.parent.name + " / " + image_path.name
-    if mask_path is not None and mask_slices is not None:
-        title += f"  (mask: {mask_path.name})"
-    figure.suptitle(title)
-    figure.savefig(output_path, dpi=150, bbox_inches="tight")
-    if show:
-        plt.show()
-    plt.close(figure)
+    stem = image_path.name[:-7] if image_path.name.lower().endswith(".nii.gz") else image_path.stem
+    output_stem = f"{image_path.parent.name}_{stem}"
+    suffix = "" if options.mode == PreviewMode.IMAGE else f"_{options.mode.value}"
+    output_path = case.export_preview(output_dir / f"{output_stem}{suffix}.png", options)
+    if export_numpy:
+        print(f"Wrote {case.image.export_numpy(output_dir / f'{output_stem}.npy')}")
+        if case.mask is not None:
+            print(f"Wrote {case.mask.export_numpy(output_dir / f'{output_stem}_mask.npy')}")
     return output_path
 
 
@@ -170,7 +132,23 @@ def main() -> None:
     parser.add_argument("--dataset", type=Path, default=Path("dataset"), help="Directory to search (default: dataset)")
     parser.add_argument("--output-dir", type=Path, default=Path("nifti_previews"), help="Directory for generated PNGs")
     parser.add_argument("--show", action="store_true", help="Also open each figure interactively")
+    parser.add_argument("--mode", choices=[mode.value for mode in PreviewMode], default="image",
+                        help="Preview image slices, a NumPy tensor slice, or both (default: image)")
+    parser.add_argument("--axis", type=int, choices=(0, 1, 2), default=2, help="Native tensor slice axis (default: 2)")
+    parser.add_argument("--slice-index", type=int, help="Slice index along --axis (default: middle)")
+    parser.add_argument("--frame", type=int, default=0, help="Frame for 4-D scans (default: 0)")
+    parser.add_argument("--patch-size", type=int, default=6, help="Numeric patch edge length, 1-16 (default: 6)")
+    parser.add_argument("--patch-origin", type=int, nargs=2, metavar=("ROW", "COLUMN"),
+                        help="Numeric patch origin in the native 2-D slice (default: centered)")
+    parser.add_argument("--export-numpy", action="store_true", help="Also save complete image/mask tensors as .npy")
     args = parser.parse_args()
+    try:
+        options = PreviewOptions(mode=args.mode, axis=args.axis, slice_index=args.slice_index,
+                                 frame=args.frame, patch_size=args.patch_size,
+                                 patch_origin=tuple(args.patch_origin) if args.patch_origin is not None else None,
+                                 show=args.show)
+    except ValueError as error:
+        parser.error(str(error))
 
     paths = sorted(path for path in args.dataset.rglob("*") if path.is_file() and is_nifti(path))
     if not paths:
@@ -184,10 +162,11 @@ def main() -> None:
     rendered = 0
     for image_path in image_paths:
         try:
-            output_path = render_volume(image_path, paths, args.output_dir, args.show)
+            output_path = render_volume(image_path, paths, args.output_dir, args.show,
+                                        options=options, export_numpy=args.export_numpy)
             rendered += 1
             print(f"Wrote {output_path}")
-        except (OSError, EOFError, ValueError, nib.filebasedimages.ImageFileError) as error:
+        except (OSError, EOFError, ValueError, IndexError, nib.filebasedimages.ImageFileError) as error:
             print(f"Skipped {image_path}: {error}")
 
     print(f"Rendered {rendered} preview(s) to {args.output_dir}; skipped {len(image_paths) - rendered}")

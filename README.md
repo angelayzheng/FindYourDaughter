@@ -78,9 +78,75 @@ python scripts/visualize_nifti.py --dataset dataset --output-dir nifti_previews
 The utility detects gzip compression from file contents, including the compressed
 `.nii` images and masks in subjects 016–025; renaming the dataset files is unnecessary.
 
+## Scan data and tensor previews
+
+`core` provides `Scan`, `ScanGeometry`, `ScanCase`, `PreviewOptions`, and
+`PreviewMode`. `Scan.data` is a NumPy `float32` tensor with NIfTI scaling applied.
+It retains the native voxel order `(i, j, k)` or `(i, j, k, frame)`; loading does
+not transpose, reorient, or normalize it. `storage_dtype` records the source
+datatype. Frame and slice access return views of the array.
+
+```python
+from core import Scan, ScanGeometry, ScanCase, PreviewOptions
+
+case = ScanCase.from_nifti(
+    "dataset/subject016/orig16.nii",
+    "dataset/subject016/mask16.nii",
+)
+scan = case.image
+print(scan.shape, scan.dtype, scan.geometry.spacing)
+print(scan.data[150:156, 150:156, 49])  # Actual NumPy voxel values
+slice_tensor = scan.slice(axis=2, index=49)  # Same as scan.data[:, :, 49]
+
+case.export_preview(
+    "nifti_previews/subject016_both.png",
+    PreviewOptions(mode="both", axis=2, slice_index=49, patch_size=6),
+)
+scan.export_numpy("nifti_previews/subject016.npy")
+```
+
+You can also construct a scan from a NumPy array with
+`Scan(data=array, geometry=ScanGeometry(affine_ras=affine, spatial_unit="mm"))`.
+Use an actual voxel-to-RAS affine for the source scan. `ScanCase` checks image
+and mask shapes, affines, units, and compatible frame counts before overlaying.
+A 3-D mask can be shared across a 4-D image's frames.
+
+The geometry stores the NIfTI RAS affine and the header's spatial units;
+`unknown` units remain unknown. Array axes are identified by their orientation
+codes, and are not assumed to be physical x/y/z axes. This model does not change
+the evaluator's SimpleITK LPS coordinate conversion.
+
+Choose a preview mode on the command line:
+
+```powershell
+# Image slices with red mask overlays (the default)
+python scripts/visualize_nifti.py --dataset dataset/subject016 --mode image
+
+# Native tensor heatmap and a numeric patch, alongside the image preview
+python scripts/visualize_nifti.py --dataset dataset/subject016 --mode both
+
+# Inspect a specific tensor slice and export full image/mask arrays
+python scripts/visualize_nifti.py --dataset dataset/subject016 --mode tensor --axis 2 --slice-index 49 --patch-origin 150 150 --patch-size 6 --export-numpy
+```
+
+`--frame` selects a 4-D frame (default 0); `--show` also opens the exported plot.
+`--slice-index` selects the tensor slice and the matching image panel; other
+image panels use their central slices. Tensor heatmaps keep native row/column
+order and the full slice's value range. The red box locates the numeric patch,
+whose labels use six significant digits. The image panels transpose slices for
+display and use voxel spacing for their aspect ratio.
+
+PNG files use `_tensor` or `_both` suffixes for those modes. `--export-numpy`
+saves all frames of the scaled image and mask arrays as `.npy` files, with no
+display transformations. Load them with `numpy.load(path, allow_pickle=False)`.
+These files contain voxel arrays only, without spatial metadata; retain the
+original NIfTI or `Scan.geometry` when physical geometry is needed. Exports
+default to the ignored `nifti_previews/` directory. Matplotlib is imported by
+the core only when a preview is requested.
+
 ## Verification
 
-Run the backend smoke tests with:
+Run the backend, scan model, and preview tests with:
 
 ```powershell
 python -m unittest discover -s tests -v
@@ -90,6 +156,7 @@ python -m unittest discover -s tests -v
 
 ```text
 backend/                  evaluator-facing Python package
+core/                     NumPy scan models and optional preview rendering
 eda/                      dataset inspection utilities
 frontend/app.py           optional Streamlit entrypoint
 scripts/                  visualization and offline dependency tooling
