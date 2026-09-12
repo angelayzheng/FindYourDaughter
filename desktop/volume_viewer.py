@@ -75,6 +75,7 @@ class VolumeViewer:
         self.transform = vtk_matrix(self.affine)
         self.indices = [size // 2 for size in self.data.shape]
         self.level, self.width = self.options.level, self.options.window
+        self.min_intensity = self.options.min_intensity
         self.opacity = self.options.opacity
         self.clip_enabled = False
         self.planes_visible = False
@@ -202,6 +203,8 @@ class VolumeViewer:
         data = self.data[tuple(selection)]
         low = self.level - self.width / 2
         gray = np.nan_to_num(np.clip((data - low) / self.width, 0, 1), nan=0)
+        if self.min_intensity is not None:
+            gray[data < self.min_intensity] = 0
         rgb = np.repeat(gray[..., None], 3, axis=2)
         if self.mask is not None:
             mask = self.mask[tuple(selection)]
@@ -301,8 +304,20 @@ class VolumeViewer:
         color.AddRGBPoint(high, 1, 0.96, 0.90)
         alpha = vtk.vtkPiecewiseFunction()
         alpha.AddPoint(low, 0)
-        alpha.AddPoint(self.level, self.opacity * 0.08)
-        alpha.AddPoint(high, self.opacity)
+        if self.min_intensity is None:
+            alpha.AddPoint(self.level, self.opacity * 0.08)
+            alpha.AddPoint(high, self.opacity)
+        elif self.min_intensity >= high:
+            alpha.AddPoint(high, 0)
+            alpha.AddPoint(self.min_intensity, 0)
+        else:
+            cutoff = max(low, self.min_intensity)
+            alpha.AddPoint(cutoff, 0)
+            first_visible = cutoff + max((high - low) * 1e-6, 1e-6)
+            alpha.AddPoint(first_visible, self.opacity * 0.02)
+            if self.level > cutoff:
+                alpha.AddPoint(self.level, self.opacity * 0.08)
+            alpha.AddPoint(high, self.opacity)
         self.volume_property.SetColor(color)
         self.volume_property.SetScalarOpacity(alpha)
 
@@ -329,6 +344,13 @@ class VolumeViewer:
     def set_opacity(self, opacity):
         self.opacity = float(np.clip(opacity, 0, 1))
         self._update_transfer()
+        self._render()
+
+    def set_min_intensity(self, value):
+        self.min_intensity = float(value)
+        self._update_transfer()
+        for dim in range(3):
+            self._update_slice(dim)
         self._render()
 
     def _slider(self, title, low, high, value, x1, x2, y, callback):
@@ -368,6 +390,8 @@ class VolumeViewer:
         self._slider("Window level", low, high, self.level, 0.04, 0.20, 0.035, lambda value: self.set_window(level=value))
         self._slider("Window width", 1, max(high - low, self.width, 2), self.width, 0.25, 0.41, 0.035, lambda value: self.set_window(width=value))
         self._slider("Volume opacity", 0, 0.5, self.opacity, 0.46, 0.62, 0.035, self.set_opacity)
+        threshold_value = low if self.min_intensity is None else np.clip(self.min_intensity, low, high)
+        self._slider("Minimum intensity", low, high, threshold_value, 0.04, 0.62, 0.14, self.set_min_intensity)
 
     def _reset_camera(self, focus_mask=False):
         camera = self.scene.GetActiveCamera()
@@ -390,7 +414,9 @@ class VolumeViewer:
             f"Volume {'ON' if self.volume.GetVisibility() else 'OFF'} / "
             f"Mask {'ON' if self.mask_actor and self.mask_actor.GetVisibility() else 'OFF / empty'} / "
             f"Planes {'ON' if self.planes_visible else 'OFF'} / Cut {'ON' if self.clip_enabled else 'OFF'} / "
-            f"{'MIP' if self.mip else 'Composite'} / CT stride {self.stride} / {self.case.image.geometry.spatial_unit}"
+            f"{'MIP' if self.mip else 'Composite'} / CT stride {self.stride} / "
+            f"Min {self.min_intensity if self.min_intensity is not None else 'OFF'} / "
+            f"{self.case.image.geometry.spatial_unit}"
         )
 
     def _render(self):

@@ -42,6 +42,11 @@ def main(argv: list[str] | None = None) -> None:
         "--level", type=float, default=40, help="Intensity window center (default: 40)"
     )
     parser.add_argument(
+        "--min-intensity",
+        type=float,
+        help="Hide volume and slice pixels below this intensity",
+    )
+    parser.add_argument(
         "--opacity",
         type=float,
         default=0.12,
@@ -68,6 +73,7 @@ def main(argv: list[str] | None = None) -> None:
             max_dimension=args.max_dimension,
             window=args.window,
             level=args.level,
+            min_intensity=args.min_intensity,
             opacity=args.opacity,
         )
     except ValueError as error:

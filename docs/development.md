@@ -44,6 +44,38 @@ The baseline validates that the volumes share the same 3-D physical grid and
 writes the required schema. Daughter detection is the next algorithm layer;
 until it is implemented, the output contains an empty `daughters` list.
 
+### Backend input loading
+
+`backend.inputs.load_case(image_path, mask_path)` returns the CT and parent mask
+as SimpleITK images on a shared 3-D grid. The evaluator and the compatibility
+entrypoint `utils.case.load_case` use this loader.
+
+- Compression is detected from file contents. Gzip data named `.nii`, including
+  subjects 016-025, is read through a temporary `.nii.gz` copy that is removed
+  after loading. Original dataset files are never rewritten or renamed.
+- Ordinary inputs retain SimpleITK's native voxel values and physical geometry.
+- If ITK rejects a nonorthogonal orientation, as in subject024, the loader first
+  checks that the original image and mask shapes and physical affines match.
+  It then resamples both onto one orthogonal grid covering their original
+  physical extent. CT interpolation is linear with float32 output; mask
+  interpolation is nearest-neighbor, preserving labels. Newly exposed space
+  outside the source volume is filled with zero. The working grid can therefore
+  have a different shape and origin from the source tensor shown in the viewer.
+  A runtime warning reports this recovery.
+- Recovery uses the coded NIfTI sform (or coded qform if no sform exists), converts
+  RAS to LPS, and converts declared metres or microns to millimetres. Unspecified
+  units follow ITK's existing millimetre assumption; the source unit is recorded
+  in `branchseed_source_spatial_unit` metadata on resampled images. A missing,
+  nonfinite, or singular recovery affine is rejected. Geometry mismatches and
+  unrelated reader errors remain errors.
+
+Physical anatomy stays in the same LPS coordinate system during resampling.
+Use `image.TransformIndexToPhysicalPoint((x, y, z))` on the **returned image** for
+evaluator coordinates; its NumPy array uses `(z, y, x)` order. Indices from the
+native `core.Scan` tensor must not be used as indices into a resampled image.
+The resampling transform maps each output physical point into the original
+voxel grid, following [SimpleITK's resampling conventions](https://simpleitk.readthedocs.io/en/master/fundamentalConcepts.html#resampling).
+
 ## Dataset inspection
 
 Inspect every `.nii` or `.nii.gz` file recursively. The script reads image
@@ -199,6 +231,7 @@ they do not assume the scan is already in standard anatomical orientation.
 | Wheel over a slice           | Step through that axis                                                           |
 | Click a slice                | Move the other slice positions to that voxel                                     |
 | Window level / width sliders | Adjust CT contrast and the volume transfer function                              |
+| Minimum intensity slider     | Hide volume and slice pixels below the selected intensity                        |
 | Volume opacity slider        | Reveal or hide tissue inside the volume                                          |
 | V / M / P                    | Toggle the CT volume, mask surface, or slice planes in 3D                        |
 | C                            | Toggle a CT cutaway, keeping voxel K at or below the K slider                    |
@@ -220,8 +253,10 @@ needs a working OpenGL display driver. Rendering is for visual inspection, with
 the evaluator's SimpleITK coordinate path unchanged.
 
 `--frame` selects a 4-D frame. `--window`, `--level`, and `--opacity` set initial
-display values (defaults 400, 40, and 0.12). Window/level use scaled voxel values,
-which are HU when the CT is calibrated. Unknown spatial units remain unknown.
+display values (defaults 400, 40, and 0.12). `--min-intensity` hides lower-valued
+volume samples and renders lower-valued slice pixels black. Window/level and the
+threshold use scaled voxel values, which are HU when the CT is calibrated. Unknown
+spatial units remain unknown.
 
 ```python
 from core import ScanCase, VolumeViewOptions

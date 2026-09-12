@@ -2,6 +2,8 @@ dataset
 __pycache__/
 *.py[cod]
 nifti_previews/
+nifti_histograms/
+synthetic_dataset/
 *.zip
 __pycache__/
 *.py[cod]
