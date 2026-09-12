@@ -59,6 +59,7 @@ a radius in millimetres, and a unit direction vector pointing into the daughter.
 - `scripts/visualize_nifti.py`: quick-look NIfTI preview utility.
 - `vendor/wheels/`: wheels bundled for offline pip installation.
 - `tests/`: automated tests.
+- `docs/`: detailed setup, development, data-inspection, and visualization guides.
 - `run.py`: required evaluator entrypoint.
 
 Keep detection logic in `backend/`. The frontend may call backend code but backend
@@ -112,6 +113,22 @@ When suggesting or creating a commit, use this structure:
 ```
 
 When suggesting or creating a branch, use `<type>/<short-kebab-case-description>`.
+
+## Documentation
+
+- Keep `README.md` extremely short and focused on judging: the offline setup
+  command, the required evaluator command, and a brief statement of the current
+  detection status. Link to `docs/` for everything else.
+- Put detailed usage, architecture, data-inspection, visualization, and developer
+  instructions in `docs/`. Keep `CONTRIBUTING.md` for contribution conventions.
+- Update the relevant documentation in the same change whenever behavior,
+  commands, dependencies, supported platforms, output fields, or limitations
+  change. Remove or correct instructions that no longer match the code.
+- Keep evaluator commands and current implementation status accurate. Do not
+  document planned branch detection as working functionality.
+- Review documentation during verification, including changes that appear to
+  affect only internal code. Documentation-only edits need `git diff --check`;
+  run executable examples when they change.
 
 ## Verification
 

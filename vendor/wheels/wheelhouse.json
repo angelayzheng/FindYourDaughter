@@ -1,6 +1,6 @@
 {
   "implementation": "CPython",
-  "python_version": "3.13",
+  "python_version": "3.14",
   "platform": "win-amd64",
   "wheels": {
     "altair-5.5.0-py3-none-any.whl": "91a310b926508d560fe0148d02a194f38b824122641ef528113d029fcd129f8c",
@@ -59,6 +59,7 @@
     "tzdata-2026.4-py2.py3-none-any.whl": "c2169a8b0a7a5e9674da5a135ccdfb2b3e671b333ed9fed17b41f73c34476e81",
     "urllib3-2.7.0-py3-none-any.whl": "9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897",
     "vtk-9.7.0-cp313-cp313-win_amd64.whl": "cd8496c654d5d852e1d75a3b3ca9d56987e7ff230041f5c6e1bfaca65366c655",
+    "vtk-9.7.0-cp314-cp314-win_amd64.whl": "f76742c0023be548aeb17c95f8cba8015b0d7dbcc33a23bd140c0a0605e23962",
     "watchdog-6.0.0-py3-none-win_amd64.whl": "cbafb470cf848d93b5d013e2ecb245d4aa1c8fd0504e863ccefa32445359d680"
   }
 }
