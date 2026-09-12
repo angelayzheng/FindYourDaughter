@@ -128,7 +128,7 @@ class ScanTest(unittest.TestCase):
 
     def test_core_import_does_not_load_visualization_dependencies(self) -> None:
         result = subprocess.run(
-            [sys.executable, "-c", "import core, sys; assert 'matplotlib' not in sys.modules; assert 'streamlit' not in sys.modules"],
+            [sys.executable, "-c", "import core, sys; assert all(m not in sys.modules for m in ('matplotlib', 'streamlit', 'vtk', 'desktop.volume_viewer'))"],
             cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True,
         )
         self.assertEqual(result.returncode, 0, result.stderr)

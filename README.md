@@ -15,7 +15,7 @@ access using one command:
 python scripts/install_offline.py
 ```
 
-The bundled wheelhouse currently targets **CPython 3.14 on Windows x64**. Before
+The bundled wheelhouse currently targets **CPython 3.13 on Windows x64**. Before
 packaging for any other judging runtime, populate it on an internet-connected
 machine with the same operating system, architecture, and Python version:
 
@@ -144,6 +144,74 @@ original NIfTI or `Scan.geometry` when physical geometry is needed. Exports
 default to the ignored `nifti_previews/` directory. Matplotlib is imported by
 the core only when a preview is requested.
 
+## Native 3D volume viewer
+
+Open a scan in the VTK desktop viewer; no browser or web server is involved:
+
+```powershell
+python scripts/view_nifti_3d.py --image dataset/subject016/orig16.nii
+```
+
+The viewer detects a single neighboring mask automatically. Use `--mask path`
+to select one explicitly, or `--no-mask` to show only the scan. It accepts both
+ordinary NIfTI files and gzip data mislabeled as `.nii`.
+
+The large viewport renders the CT volume with adjustable transparency and a red
+surface of the supplied mask. Three smaller views show full-resolution slices
+with red mask overlays. Image spacing and the full NIfTI affine position all
+layers together, including oblique scans. The labels name native voxel axes;
+they do not assume the scan is already in standard anatomical orientation.
+
+| Control | Action |
+| --- | --- |
+| Drag in 3D / mouse wheel | Rotate / zoom |
+| I, J, K sliders | Move the three slice positions |
+| Wheel over a slice | Step through that axis |
+| Click a slice | Move the other slice positions to that voxel |
+| Window level / width sliders | Adjust CT contrast and the volume transfer function |
+| Volume opacity slider | Reveal or hide tissue inside the volume |
+| V / M / P | Toggle the CT volume, mask surface, or slice planes in 3D |
+| C | Toggle a CT cutaway, keeping voxel K at or below the K slider |
+| B | Switch between composite volume rendering and maximum intensity projection (MIP) |
+| F / R | Focus on the mask / reset the 3D camera |
+| S / Q or Escape | Save a PNG / close the window |
+
+This is a volumetric display: transparency integrates tissue along viewing rays,
+MIP emphasizes the brightest voxels, and slice views expose interior detail.
+The mask surface comes only from supplied foreground voxels; no new segmentation
+is performed. Its surface closes at scan boundaries, including cropped ends.
+
+The CT render uses a sampled grid capped at 192 voxels on its longest axis by
+default. Increase `--max-dimension` for more detail or lower it for responsiveness.
+This sampling can omit small CT structures; slice views and mask geometry always
+use the full-resolution input. The CPU ray caster uses one thread for repeatable
+rendering. It does not require GPU volume computation; the native window still
+needs a working OpenGL display driver. Rendering is for visual inspection, with
+the evaluator's SimpleITK coordinate path unchanged.
+
+`--frame` selects a 4-D frame. `--window`, `--level`, and `--opacity` set initial
+display values (defaults 400, 40, and 0.12). Window/level use scaled voxel values,
+which are HU when the CT is calibrated. Unknown spatial units remain unknown.
+
+```python
+from core import ScanCase, VolumeViewOptions
+
+case = ScanCase.from_nifti("dataset/subject016/orig16.nii", "dataset/subject016/mask16.nii")
+case.show_3d(VolumeViewOptions(max_dimension=192, window=400, level=40))
+# A standalone Scan also has show_3d(), optionally accepting mask=another_scan.
+```
+
+Screenshots default to `nifti_previews/<case_id>_3d.png`. For a render that exits
+without opening an interactive window:
+
+```powershell
+python scripts/view_nifti_3d.py --image dataset/subject016/orig16.nii --offscreen --screenshot nifti_previews/subject016_3d.png
+```
+
+VTK is pinned in `requirements-frontend.txt`, bundled in `vendor/wheels`, and
+included in the offline installer. Importing `core` does not import VTK or open
+a window. The existing 2-D preview utility and web frontend remain separate.
+
 ## Verification
 
 Run the backend, scan model, and preview tests with:
@@ -157,6 +225,7 @@ python -m unittest discover -s tests -v
 ```text
 backend/                  evaluator-facing Python package
 core/                     NumPy scan models and optional preview rendering
+desktop/                  native VTK volume viewer
 eda/                      dataset inspection utilities
 frontend/app.py           optional Streamlit entrypoint
 scripts/                  visualization and offline dependency tooling

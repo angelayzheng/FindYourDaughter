@@ -24,6 +24,31 @@ class PreviewMode(str, Enum):
 
 
 @dataclass(frozen=True)
+class VolumeViewOptions:
+    """Desktop volume display settings; they never modify the source tensor.
+
+    max_dimension bounds the sampled CT grid; masks and slices remain full size.
+    window and level refer to scaled voxel values (HU for calibrated CT scans).
+    """
+
+    frame: int = 0
+    max_dimension: int = 192
+    window: float = 400.0
+    level: float = 40.0
+    opacity: float = 0.12
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.frame, (int, np.integer)) or self.frame < 0:
+            raise ValueError("frame must be a nonnegative integer")
+        if not isinstance(self.max_dimension, (int, np.integer)) or not 16 <= self.max_dimension <= 512:
+            raise ValueError("max_dimension must be an integer between 16 and 512")
+        if not np.isfinite((self.window, self.level, self.opacity)).all() or self.window <= 0:
+            raise ValueError("window must be positive and all display settings must be finite")
+        if not 0 <= self.opacity <= 0.5:
+            raise ValueError("opacity must be between 0 and 0.5")
+
+
+@dataclass(frozen=True)
 class PreviewOptions:
     """Settings used by Scan.export_preview and ScanCase.export_preview.
 
@@ -197,6 +222,10 @@ class Scan:
 
         return export_preview(self, path, options or PreviewOptions(), mask=mask)
 
+    def show_3d(self, options: VolumeViewOptions | None = None, *, mask: Scan | None = None) -> None:
+        """Open a native VTK volume viewer; block until its window closes."""
+        ScanCase(self, mask).show_3d(options)
+
 
 @dataclass(frozen=True)
 class ScanCase:
@@ -227,3 +256,9 @@ class ScanCase:
 
     def export_preview(self, path: str | Path, options: PreviewOptions | None = None) -> Path:
         return self.image.export_preview(path, options, mask=self.mask)
+
+    def show_3d(self, options: VolumeViewOptions | None = None) -> None:
+        """Open the optional desktop viewer without importing web UI code."""
+        from desktop.volume_viewer import VolumeViewer
+
+        VolumeViewer(self, options).show()
