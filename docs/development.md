@@ -208,6 +208,10 @@ the core only when a preview is requested.
 
 ## Native 3D volume viewer
 
+Add `--detect` to inspect experimental detector candidates with linked CT slices,
+branch selection, and radius rings. See the [detector visualization guide](artery_detection.md#run-and-inspect)
+for controls, coordinate handling, and screenshot examples.
+
 Open a scan in the VTK desktop viewer; no browser or web server is involved:
 
 ```powershell

@@ -8,6 +8,64 @@ candidates, and their detection accuracy has not been measured.
 
 ## Run and inspect
 
+Open the native VTK detector viewer with:
+
+```powershell
+python scripts/view_nifti_3d.py --image dataset/subject001/orig1.nii --detect
+```
+
+`--detect` finds a neighboring mask automatically, or accepts `--mask path`.
+It requires a 3-D CT and parent-aorta mask. Detection runs once at startup;
+camera, contrast, and slice controls only change the display. The ordinary
+scan viewer continues to work without this flag. No browser is used.
+
+The 3-D view starts with the supplied aorta surface and every candidate's short
+centerline. Yellow spheres mark proposed ostia; green markers and arrowheads
+mark the 5 mm seeds and directions. Green rings show the estimated radius in
+the plane perpendicular to the local branch path. Line thickness and marker
+size are display aids, not segmented vessel diameters. The selected branch is
+highlighted and labeled with its `branch_NNN` ID and estimated radius.
+
+The three linked CT slice panels initially focus on the first candidate's seed.
+They show only markers and path portions within half a voxel of the current
+plane, projected onto that plane. Off-plane branches are not drawn across the
+slice. The full CT volume starts hidden so it does not obscure small branches;
+press **V** to show it. Detection mode starts at window width 600 and level 200;
+use the sliders or `--window` and `--level` to adjust contrast.
+
+| Control | Action |
+| --- | --- |
+| Click a 3-D branch or press Left / Right | Select a candidate, focus the camera, and center CT slices on its seed |
+| `[` / `]` | Alternate previous / next keys; navigation wraps around |
+| J | Return to the selected seed after exploring |
+| A | Show the aorta overview and restore full slice extents |
+| D | Hide or show all detector markers, lines, and radius rings |
+| V / M | Toggle the CT volume / aorta surface |
+| Wheel over a slice | Move through neighboring slices |
+| S | Save the current view as PNG |
+
+Other [native viewer controls](development.md#native-3d-volume-viewer) remain
+available. Empty detection results show an explicit message. The viewer uses
+the backend's **exact working CT/mask grid**, including subject024's resampling;
+LPS coordinates are converted once to RAS for display, without changing detector
+output. It does not overlay resampled voxel indices onto the original tensor.
+
+Focus a particular candidate at startup or save an offscreen view:
+
+```powershell
+python scripts/view_nifti_3d.py --image dataset/subject001/orig1.nii --detect --branch 4
+python scripts/view_nifti_3d.py --image dataset/subject001/orig1.nii --detect --branch 4 --offscreen --screenshot nifti_previews/detection/subject001_branch004_3d.png
+```
+
+`--branch` is 1-based and must exist in that case's detections. The default
+interactive screenshot path is `nifti_previews/<case>_detection_3d.png`. The
+viewer labels all results experimental; these are proposals, not reference
+annotations. Candidate geometry is recomputed from the current detector when
+opening this mode. Use the commands below to export evaluator JSON or diagnostic
+files as well.
+
+### JSON and static overlays
+
 The evaluator command is unchanged:
 
 ```powershell

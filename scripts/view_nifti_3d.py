@@ -15,6 +15,10 @@ from core import ScanCase, VolumeViewOptions
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", type=Path, required=True, help="CT .nii or .nii.gz")
+    parser.add_argument("--detect", action="store_true",
+                        help="Run the experimental detector and overlay branches on its working grid")
+    parser.add_argument("--branch", type=int,
+                        help="Initially focus this candidate number (1-based; requires --detect)")
     parser.add_argument(
         "--mask",
         type=Path,
@@ -35,11 +39,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--window",
         type=float,
-        default=400,
-        help="Intensity window width (default: 400)",
+        help="Intensity window width (default: 400, or 600 with --detect)",
     )
     parser.add_argument(
-        "--level", type=float, default=40, help="Intensity window center (default: 40)"
+        "--level", type=float, help="Intensity window center (default: 40, or 200 with --detect)"
     )
     parser.add_argument(
         "--min-intensity",
@@ -67,12 +70,16 @@ def main(argv: list[str] | None = None) -> None:
         parser.error("--mask and --no-mask cannot be used together")
     if args.offscreen and args.screenshot is None:
         parser.error("--offscreen requires --screenshot")
+    if args.branch is not None and (not args.detect or args.branch < 1):
+        parser.error("--branch requires --detect and a positive candidate number")
+    if args.detect and (args.no_mask or args.frame != 0):
+        parser.error("--detect requires an aorta mask and a 3-D scan (--frame 0)")
     try:
         options = VolumeViewOptions(
             frame=args.frame,
             max_dimension=args.max_dimension,
-            window=args.window,
-            level=args.level,
+            window=args.window if args.window is not None else (600 if args.detect else 400),
+            level=args.level if args.level is not None else (200 if args.detect else 40),
             min_intensity=args.min_intensity,
             opacity=args.opacity,
         )
@@ -94,8 +101,27 @@ def main(argv: list[str] | None = None) -> None:
         mask_path = candidates[0] if candidates else None
     from desktop.volume_viewer import VolumeViewer
 
-    case = ScanCase.from_nifti(args.image, mask_path)
-    viewer = VolumeViewer(case, options)
+    detection = None
+    if args.detect:
+        if mask_path is None:
+            parser.error("--detect requires an aorta mask; provide --mask")
+        from backend.inputs import load_case
+        from backend.detection import detect_daughters
+        from desktop.detection_overlay import scan_case_from_backend
+
+        print("Loading and detecting candidate arteries...", flush=True)
+        working_case = load_case(args.image, mask_path)
+        detection = detect_daughters(working_case.image, working_case.aorta_mask)
+        case = scan_case_from_backend(working_case)
+        del working_case
+        print(f"{len(detection.branches)} experimental candidates; Left / Right to browse, J to focus, D to toggle", flush=True)
+        if args.branch is not None and args.branch > len(detection.branches):
+            parser.error(f"--branch {args.branch} exceeds the {len(detection.branches)} detected candidates")
+    else:
+        case = ScanCase.from_nifti(args.image, mask_path)
+    viewer = VolumeViewer(case, options, detection=detection)
+    if args.branch is not None:
+        viewer.detection_overlay.select(args.branch - 1)
     viewer.show(screenshot=args.screenshot, offscreen=args.offscreen)
 
 

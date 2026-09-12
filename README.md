@@ -1,6 +1,6 @@
 # Find Your Daughter
 
-Branchseed Challenge submission. The backend now proposes direct daughter arteries using an experimental CPU baseline. Real-scan detection accuracy is not yet measured; see the [detection method, validation, and candidate previews](docs/artery_detection.md).
+Branchseed Challenge submission. The backend now proposes direct daughter arteries using an experimental CPU baseline. Real-scan detection accuracy is not yet measured; see the [detection method, validation, and candidate previews](docs/artery_detection.md). The [native detector viewer](docs/artery_detection.md#run-and-inspect) displays branches in 3D with linked CT slices.
 
 The bundled offline wheels target CPython 3.14 on Windows x64. From the repository root, install dependencies:
 

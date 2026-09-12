@@ -62,8 +62,10 @@ def mask_surface(mask: np.ndarray):
 class VolumeViewer:
     """One case per native window. Constructing a viewer does not open a window."""
 
-    def __init__(self, case: ScanCase, options: VolumeViewOptions / None = None) -> None:
+    def __init__(self, case: ScanCase, options: VolumeViewOptions | None = None, *, detection=None) -> None:
         self.case = ScanCase(case.image, case.mask)
+        if detection is not None and (case.image.data.ndim != 3 or case.image.geometry.spatial_unit != "mm"):
+            raise ValueError("Detector overlays require a 3-D display grid in millimetres")
         self.options = options or VolumeViewOptions()
         self.data = case.image.volume(self.options.frame)
         if min(self.data.shape) < 2:
@@ -74,6 +76,7 @@ class VolumeViewer:
         self.affine = case.image.geometry.affine_ras
         self.transform = vtk_matrix(self.affine)
         self.indices = [size // 2 for size in self.data.shape]
+        self.slice_focus_voxel = None
         self.level, self.width = self.options.level, self.options.window
         self.min_intensity = self.options.min_intensity
         self.opacity = self.options.opacity
@@ -81,6 +84,7 @@ class VolumeViewer:
         self.planes_visible = False
         self.mip = False
         self.ready = False
+        self.detection_overlay = None
         self.sliders = []
         self.slice_actors, self.slice_labels, self.plane_sources = [], [], []
         self.crosshair_lines = []
@@ -90,13 +94,15 @@ class VolumeViewer:
         self.window.SetWindowName(f"Branchseed 3D / {case.case_id}")
         self.window.SetSize(1400, 900)
         self.window.SetMultiSamples(0)
-        self.scene = self._renderer((0, 0.24, 0.68, 1))
-        self.controls = self._renderer((0, 0, 0.68, 0.24))
+        self.controls_height = .28 if detection is not None else .24
+        self.scene = self._renderer((0, self.controls_height, 0.68, 1))
+        self.controls = self._renderer((0, 0, 0.68, self.controls_height))
         self.slice_renderers = [self._renderer((0.68, low, 1, high)) for low, high in ((0.67, 1), (0.34, 0.67), (0, 0.34))]
-        self._text(self.scene, f"{case.case_id} / 3D volume + supplied mask", (0.025, 0.94), 20)
-        self.status = self._text(self.controls, "", (0.03, 0.82), 15)
-        self._text(self.controls, "Drag: rotate   Wheel: zoom / scroll slices   Click slice: move cross-section", (0.03, 0.70), 13)
-        self._text(self.controls, "V volume   M mask   P planes   C cut at K   B MIP   F focus mask   R reset   S save   Q close", (0.03, 0.60), 12)
+        scene_title = "3D aorta + branch candidates" if detection is not None else "3D volume + supplied mask"
+        self._text(self.scene, f"{case.case_id} / {scene_title}", (0.025, 0.94), 20)
+        self.status = self._text(self.controls, "", (0.03, 0.9 if detection is not None else .82), 15)
+        self._text(self.controls, "Drag: rotate   Wheel: zoom / scroll slices   Click slice: move cross-section", (0.03, .8 if detection is not None else .70), 13)
+        self._text(self.controls, "V volume   M mask   P planes   C cut at K   B MIP   F focus mask   R reset   S save   Q close", (0.03, .71 if detection is not None else .60), 12)
 
         self._build_volume()
         self._build_mask()
@@ -124,6 +130,17 @@ class VolumeViewer:
         self.orientation.SetCurrentRenderer(self.scene)
         self.orientation.SetViewport(0.02, 0.02, 0.16, 0.20)
         self._build_sliders()
+        if detection is not None:
+            from desktop.detection_overlay import DetectionOverlay
+
+            self.detection_overlay = DetectionOverlay(self, detection)
+            self.default_screenshot = Path("nifti_previews") / f"{case.case_id}_detection_3d.png"
+            self.volume.SetVisibility(False)
+            self.outline_actor.SetVisibility(False)
+            if self.mask_actor:
+                self.mask_actor.GetProperty().SetOpacity(.45)
+            self.detection_overlay.select(0)
+            self._reset_camera(focus_mask=True)
         self._update_status()
 
     def _renderer(self, viewport):
@@ -141,6 +158,8 @@ class VolumeViewer:
         actor.SetPosition(*position)
         actor.GetTextProperty().SetFontSize(size)
         actor.GetTextProperty().SetColor(0.86, 0.9, 0.96)
+        actor.GetTextProperty().SetBackgroundColor(.035, .045, .065)
+        actor.GetTextProperty().SetBackgroundOpacity(.8)
         renderer.AddViewProp(actor)
         return actor
 
@@ -284,6 +303,10 @@ class VolumeViewer:
         renderer = self.slice_renderers[slot]
         camera = renderer.GetActiveCamera()
         center = corner + (u + v) / 2
+        if self.slice_focus_voxel is not None and not reset_camera:
+            focus = self.slice_focus_voxel.copy()
+            focus[dim] = self.indices[dim]
+            center = (self.affine @ np.r_[focus, 1])[:3]
         normal = np.cross(u, v)
         normal /= np.linalg.norm(normal)
         distance = max(np.linalg.norm(u), np.linalg.norm(v)) * 2
@@ -325,6 +348,8 @@ class VolumeViewer:
         self.indices[dim] = int(np.clip(round(index), 0, self.data.shape[dim] - 1))
         self._update_slice(dim)
         self._update_crosshairs()
+        if self.detection_overlay is not None:
+            self.detection_overlay.update_slices()
         if self.sliders:
             self.sliders[dim].GetRepresentation().SetValue(self.indices[dim])
         if self.clip_enabled:
@@ -359,7 +384,10 @@ class VolumeViewer:
         representation.SetMaximumValue(high)
         representation.SetValue(value)
         representation.SetTitleText("")
-        self._text(self.controls, title, (x1 / 0.68, max(0.02, y / 0.24 - 0.13)), 13)
+        label_position = (x1 / .68, max(.02, y / self.controls_height - (.11 if self.controls_height == .28 else .13)))
+        if title == "Minimum intensity" and self.controls_height == .28:
+            label_position = (.35, y / self.controls_height + .07)
+        self._text(self.controls, title, label_position, 13)
         representation.SetLabelFormat("%.0f" if title != "Volume opacity" else "%.2f")
         representation.GetPoint1Coordinate().SetCoordinateSystemToNormalizedDisplay()
         representation.GetPoint1Coordinate().SetValue(x1, y)
@@ -391,7 +419,8 @@ class VolumeViewer:
         self._slider("Window width", 1, max(high - low, self.width, 2), self.width, 0.25, 0.41, 0.035, lambda value: self.set_window(width=value))
         self._slider("Volume opacity", 0, 0.5, self.opacity, 0.46, 0.62, 0.035, self.set_opacity)
         threshold_value = low if self.min_intensity is None else np.clip(self.min_intensity, low, high)
-        self._slider("Minimum intensity", low, high, threshold_value, 0.04, 0.62, 0.14, self.set_min_intensity)
+        self._slider("Minimum intensity", low, high, threshold_value, 0.04, 0.62,
+                     .16 if self.controls_height == .28 else .14, self.set_min_intensity)
 
     def _reset_camera(self, focus_mask=False):
         camera = self.scene.GetActiveCamera()
@@ -449,10 +478,26 @@ class VolumeViewer:
                 for dim in range(3):
                     self.set_slice(dim, voxel[dim])
         elif renderer == self.scene:
+            if self.detection_overlay is not None and self.detection_overlay.pick(*self.interactor.GetEventPosition()):
+                return
             self.style.OnLeftButtonDown()
 
     def _key(self, *_):
         key = self.interactor.GetKeySym().lower()
+        overlay = self.detection_overlay
+        if overlay is not None:
+            if key in ("bracketleft", "bracketright", "left", "right"):
+                overlay.select((overlay.selected or 0) + (-1 if key in ("bracketleft", "left") else 1))
+                return
+            if key == "d":
+                overlay.toggle()
+                return
+            if key == "a":
+                overlay.overview()
+                return
+            if key == "j":
+                overlay.select(overlay.selected or 0)
+                return
         if key in ("q", "escape"):
             self.interactor.TerminateApp()
             return
