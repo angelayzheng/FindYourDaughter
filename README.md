@@ -14,4 +14,10 @@ Run a case:
 python run.py --image image.nii.gz --aorta-mask aorta_mask.nii.gz --output prediction.json
 ```
 
-See [development and visualization guidance](docs/development.md) for other commands and details.
+After setup, open the native 3D viewer (it automatically loads a single neighboring mask):
+
+```text
+python scripts/view_nifti_3d.py --image dataset/subject016/orig16.nii
+```
+
+See [3D viewer controls, options, and screenshots](docs/development.md#native-3d-volume-viewer) or the [development guide](docs/development.md) for details.
