@@ -1,2 +1,9 @@
 dataset
 nifti_previews/
+*.zip
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+prediction.json
+tmp/
