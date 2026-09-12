@@ -42,6 +42,23 @@ python eda/inspect_nifti_dataset.py dataset --output nifti_dimensions.csv
 python eda/inspect_nifti_dataset.py dataset --output nifti_dimensions.json
 ```
 
+## Synthetic test cases
+
+Generate reproducible CT-like cases with a parent-aorta mask, visible daughter
+tubes, and JSON ground truth for controlled algorithm tests:
+
+```powershell
+python scripts/generate_synthetic_cases.py --output synthetic_dataset --cases 10 --seed 2026
+```
+
+Each generated `subjectNNN/` contains `origNNN.nii`, `maskNNN.nii`, and
+`truthNNN.json`. The mask contains only the parent tube; daughter ostia, 5 mm
+seeds, radii, directions, and curved centerlines are recorded in the truth file.
+Use `--min-daughters`, `--max-daughters`, `--curvature`, `--noise-std`, `--size`,
+and `--spacing` to vary the test set while retaining physical-space vessel
+dimensions. Daughter branches use separated launch angles and are rejected if
+their centerlines would overlap.
+
 ## Voxel-intensity histograms
 
 Generate one Matplotlib histogram per CT/original volume. Values include NIfTI
