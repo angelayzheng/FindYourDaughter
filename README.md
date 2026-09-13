@@ -1,33 +1,22 @@
 # Find Your Daughter
 
-Branchseed Challenge submission. The CPU backend proposes direct daughter
-arteries from CT and a supplied parent-aorta mask. The refined detector is the
-default; the original baseline and [contact](docs/contact_detection.md), [fusion](docs/fusion_detection.md),
-and [refined](docs/refined_detection.md)
-alternatives are available. [Draft-reference evaluation](docs/evaluation.md) is supported;
-expert-validated detection accuracy remains unmeasured.
+Branchseed Challenge submission. The CPU backend detects direct daughter
+arteries from a CT NIfTI volume and a parent-only aorta mask. Detection is
+offline; expert-validated accuracy is not yet established.
 
-The bundled offline wheels target CPython 3.14 on Windows x64:
+Install the bundled CPython 3.14 / Windows x64 dependencies offline:
 
 ```text
 python scripts/install_offline.py
 ```
 
-Run from the repository root:
+Run from the repository root with the required evaluator interface:
 
 ```text
-python run.py --image image.nii.gz --aorta-mask aorta_mask.nii.gz --output prediction.json
+python run.py --image <image_path>.nii.gz --aorta-mask <aorta_mask_path>.nii.gz --output prediction.json
 ```
 
-Developer UI shortcuts are available with `python run.py --gui --subject
-dataset/subject001` or `python run.py --webui`.
+The output is JSON containing `case_id`, the parent `aorta`, and detected
+daughter instances with physical-space coordinates, radius, and direction.
 
-Optional frontend visualization:
-
-```text
-python -m streamlit run frontend/app.py
-```
-
-See [detection and native 3D review](docs/artery_detection.md),
-[setup, data inspection, and visualization](docs/development.md), or
-[contributing](CONTRIBUTING.md) for details.
+See [docs/](docs/) for development and evaluation details.
