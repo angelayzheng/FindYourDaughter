@@ -88,6 +88,8 @@ def render_3d(
     cut_at_k: int | None = None,
     show_slices: bool = False,
     show_planes: bool = False,
+    plane_opacity: float = 0.85,
+    focus_mask: bool = False,
     slice_indices: tuple[int, int, int] | None = None,
     session: VTKRenderSession | None = None,
 ) -> bytes:
@@ -101,6 +103,8 @@ def render_3d(
                     azimuth=azimuth, elevation=elevation, zoom=zoom,
                     show_volume=show_volume, show_mask=show_mask, mip=mip, cut_at_k=cut_at_k,
                     show_slices=show_slices, show_planes=show_planes,
+                    plane_opacity=plane_opacity, focus_mask=focus_mask,
+                    min_intensity=options.min_intensity,
                     slice_indices=slice_indices or tuple(size // 2 for size in case.image.shape[:3]))
     if session is not None:
         return session.render(settings)
@@ -229,18 +233,21 @@ def _apply_settings(viewer, settings: dict) -> None:
     show_slices = bool(settings["show_slices"])
     slices_were_visible = bool(viewer.slice_renderers[0].GetDraw())
     contrast_changed = (viewer.level != float(settings["level"]) or
-                        viewer.width != float(settings["window"]))
+                        viewer.width != float(settings["window"]) or
+                        viewer.min_intensity != settings.get("min_intensity"))
     viewer.scene.SetViewport(0, 0, 0.68 if show_slices else 1, 1)
     for renderer in viewer.slice_renderers:
         renderer.SetDraw(show_slices)
-    viewer.planes_visible = show_slices and bool(settings["show_planes"])
+    viewer.planes_visible = bool(settings["show_planes"])
     for _, plane_actor in viewer.slice_actors:
         plane_actor.SetVisibility(viewer.planes_visible)
+        plane_actor.GetProperty().SetOpacity(float(settings.get("plane_opacity", 0.85)))
     viewer.level = float(settings["level"])
     viewer.width = float(settings["window"])
     viewer.opacity = float(settings["opacity"])
+    viewer.min_intensity = settings.get("min_intensity")
     viewer._update_transfer()
-    if show_slices:
+    if show_slices or viewer.planes_visible:
         for dim, index in enumerate(settings["slice_indices"]):
             if index != viewer.indices[dim] or contrast_changed or not slices_were_visible:
                 viewer.set_slice(dim, index)
@@ -259,7 +266,7 @@ def _apply_settings(viewer, settings: dict) -> None:
         viewer.indices[2] = slice_k
     else:
         viewer._update_clip()
-    viewer._reset_camera()
+    viewer._reset_camera(focus_mask=bool(settings.get("focus_mask")))
     camera = viewer.scene.GetActiveCamera()
     camera.Azimuth(float(settings["azimuth"]))
     camera.Elevation(float(settings["elevation"]))

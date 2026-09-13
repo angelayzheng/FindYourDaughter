@@ -26,6 +26,77 @@ class CaseDiscoveryTest(unittest.TestCase):
 
 
 class BrowserRenderTest(unittest.TestCase):
+    def test_fast_scene_preserves_affine_and_bounds_payload(self):
+        import numpy as np
+        from core import Scan, ScanCase, ScanGeometry
+        from frontend.browser_scene import scene_payload
+
+        data = np.full((12, 12, 12), 150, dtype=np.float32)
+        mask = np.zeros_like(data)
+        mask[3:9, 3:9, 3:9] = 1
+        affine = np.array([[2, 0, 0, 10], [0, 3, 0, 20],
+                           [0, 0, 4, 30], [0, 0, 0, 1]])
+        geometry = ScanGeometry(affine, "mm")
+        case = ScanCase(Scan(data, geometry), Scan(mask, geometry))
+        scene = scene_payload(case, sampling_limit=12)
+        center = np.array([21, 36.5, 52])
+        span = 44.0
+        expected = np.round((np.array([16, 29, 42]) - center) / span, 4)
+        self.assertIn(expected.tolist(), scene["mask"])
+        self.assertLess(scene["count_mask"], int(mask.sum()))
+        self.assertEqual(scene["count_ct"], 12 ** 3)
+
+    def test_branch_ring_and_vector_use_detector_lps_coordinates(self):
+        import numpy as np
+        from core import Scan, ScanCase, ScanGeometry
+        from frontend.browser_scene import scene_payload
+
+        geometry = ScanGeometry(np.diag([2., 3., 4., 1.]), "mm")
+        case = ScanCase(Scan(np.zeros((12, 12, 12), dtype=np.float32), geometry))
+        prediction = {"daughters": [{"instance_id": "branch_001",
+                                    "ostium_xyz_mm": [-6, -9, 12],
+                                    "seed_xyz_mm": [-11, -9, 12],
+                                    "direction_xyz": [-1, 0, 0], "radius_mm": 3}]}
+        scene = scene_payload(case, show_volume=False, prediction=prediction,
+                              selected_branch="branch_001")
+        branch = scene["branches"][0]
+        span = 44.0
+        center = np.array([11., 16.5, 22.])
+        np.testing.assert_allclose(branch["ostium"],
+                                   np.round((np.array([6., 9., 12.]) - center) / span, 4))
+        np.testing.assert_allclose(branch["seed"],
+                                   np.round((np.array([11., 9., 12.]) - center) / span, 4))
+        np.testing.assert_allclose(branch["arrow"],
+                                   np.round((np.array([15.5, 9., 12.]) - center) / span, 4))
+        ring = np.asarray(branch["ring"])
+        radii = np.linalg.norm(ring - branch["seed"], axis=1) * span
+        np.testing.assert_allclose(radii, 3, atol=0.01)
+        np.testing.assert_allclose(ring[:, 0], branch["seed"][0], atol=1e-4)
+        self.assertEqual(scene["selected_branch"], "branch_001")
+
+    def test_vtk_plane_and_threshold_settings_reach_session(self):
+        import numpy as np
+        from core import Scan, ScanCase, ScanGeometry, VolumeViewOptions
+        from frontend.render import render_3d
+
+        class Session:
+            settings = None
+
+            def render(self, settings):
+                self.settings = settings
+                return b"png"
+
+        case = ScanCase(Scan(np.zeros((16, 16, 16), dtype=np.float32),
+                             ScanGeometry(np.eye(4), "mm"), source_path=Path("image.nii")))
+        session = Session()
+        render_3d(case, VolumeViewOptions(max_dimension=16, min_intensity=110),
+                  show_planes=True, show_slices=False, plane_opacity=.35,
+                  focus_mask=True, slice_indices=(3, 4, 5), session=session)
+        self.assertEqual(session.settings["min_intensity"], 110)
+        self.assertEqual(session.settings["plane_opacity"], .35)
+        self.assertTrue(session.settings["focus_mask"])
+        self.assertEqual(session.settings["slice_indices"], (3, 4, 5))
+
     def test_fallback_points_use_physical_affine_and_mask(self):
         import numpy as np
         from core import Scan, ScanCase, ScanGeometry
@@ -118,9 +189,13 @@ class BrowserRenderTest(unittest.TestCase):
                                    slice_indices=(12, 12, 12), session=session)
                 moved = render_3d(case, options, show_slices=True, show_planes=True,
                                   slice_indices=(12, 12, 22), session=session)
+                planes_only = render_3d(case, options, show_slices=False, show_planes=True,
+                                        plane_opacity=.35, slice_indices=(12, 12, 22),
+                                        session=session)
                 self.assertEqual(session._process.pid, pid)
                 self.assertNotEqual(first, second)
                 self.assertNotEqual(slices, moved)
+                self.assertNotEqual(first, planes_only)
             finally:
                 session.close()
 

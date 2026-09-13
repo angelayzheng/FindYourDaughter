@@ -138,21 +138,46 @@ python -m streamlit run frontend/app.py
 
 The dashboard lists NIfTI scans in the chosen dataset folder and its immediate
 subject subfolders. Select a subject, CT file, and optional neighboring aorta
-mask. It validates image/mask geometry, then renders the existing VTK volume
-scene into the dashboard. Sidebar controls adjust the camera, opacity,
-window/level, sampling limit, MIP, and a voxel-K cutaway. The **Orthogonal
-slices** controls display the native VTK slice panels beside the 3-D view.
-Axis I, J, and K sliders move the three cross-sections; **Show slice planes in
-3D** also places those sections in the volume scene. These are voxel indices
-for browsing, not physical-space detection coordinates. Each slider or toggle
-change starts a new render automatically; download the image as PNG when ready.
+mask in **Case files**. With a 3-D CT and mask, **Branch detection** runs the selected
+experimental algorithm (baseline by default) once per input revision and caches
+its evaluator-format results. Choose an instance to emphasize or hide the branch
+overlay. The **Results** tab places the evaluator JSON export above the
+measurements. It displays each candidate's parent ID, physical LPS ostium and
+5 mm seed coordinates, radius in millimetres, and unit direction. An empty
+detector result is reported explicitly.
+These candidates are proposals, not verified anatomical labels.
+
+The dashboard is titled **Find Your Daughter** and uses a dark, flat rose
+palette with light text. The main title and sidebar controls start near the top
+of their panels. **Fast interactive** is the default renderer. It sends
+a bounded sample of CT voxels and mask surface points in the NIfTI RAS display
+geometry to a Canvas 2D viewer. Detected LPS points and directions are
+converted to RAS for overlay: a blue dot marks the ostium, a teal arrow gives
+the direction, and a pale teal ring marks the seed and estimated radius
+perpendicular to that vector. The ring is a measurement glyph, not a segmented
+vessel surface. Drag to orbit, scroll to zoom, double-click to
+reset, or save the current view as PNG. Camera motion does not rerun Streamlit
+or render a new server PNG. Window, level, sampling, and visibility changes
+rebuild the sampled scene. This is a point preview, not volumetric CT rendering;
+it uses neither WebGL nor external assets.
+
+Choose **Detailed VTK** for the native CPU volume scene. Sidebar dropdowns group
+volume contrast, camera, and slice-plane controls. These include minimum
+intensity, opacity, MIP, CT sampling, mask focus, three orthogonal I/J/K voxel
+indices with physical axis labels, independent 3-D plane visibility and opacity,
+and a CT cut at K. Slice panels can be shown beside the volume view. I/J/K are
+voxel indices for browsing, not physical-space detection coordinates. Each
+slider or toggle change starts a new render automatically; download the image
+as PNG when ready. The detector measurements are currently overlaid in the fast
+view and listed in Results; the detailed VTK PNG remains a volume/slice view.
 A progress bar shows elapsed rendering time, and a completion message appears
 when the image is ready. The dashboard keeps a VTK render process and its loaded
 scan alive while the selected case, frame, and CT sampling limit stay the same.
 Changing those settings rebuilds the scene and takes longer than camera or
 display adjustments. Rendering still uses the CPU-only Mesa `softpipe` driver,
 so higher CT sampling limits and large output images can take longer than a GPU.
-The browser displays a VTK-rendered image; rotation uses the camera sliders.
+In Detailed VTK mode, the browser displays a VTK-rendered image; rotation uses
+the camera sliders.
 If VTK cannot create its offscreen context, the dashboard explicitly reports
 the failure and shows the simpler CPU point preview instead.
 
@@ -162,8 +187,7 @@ OpenGL, so the 3-D volume render can run on CPUs without a GPU or browser
 WebGL. The normal Windows OpenGL path failed in our headless session, and
 Mesa's `llvmpipe` driver exited with an illegal instruction; `softpipe`
 rendered the full-size subject successfully. The subprocess changes no system
-graphics settings and uses no network. The NIfTI RAS affine is used for
-display; this viewer performs no artery detection.
+graphics settings and uses no network. The NIfTI RAS affine is used for display.
 
 The existing NIfTI quick-look utility lives at `scripts/visualize_nifti.py`:
 

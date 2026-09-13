@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #f0e7e9; background: #171417; font: 12px Consolas, 'Courier New', monospace; }
+  .viewer { position: relative; height: 600px; overflow: hidden; border: 1px solid #75515f; border-radius: 0; background: #171417; }
+  canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .top, .bottom { position: absolute; left: 16px; right: 16px; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+  .top { top: 15px; justify-content: space-between; }
+  .bottom { bottom: 14px; justify-content: space-between; color: #d5b8c3; }
+  .badge { padding: 7px 10px; border: 1px solid #8a5d6d; border-radius: 0; background: #292126ee; letter-spacing: .02em; font-size: 11px; font-weight: 700; }
+  .legend { display: flex; gap: 14px; }
+  .legend span::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: #d2ccd0; }
+  .legend span.aorta::before { background: #da5575; }
+  .legend span.branch { color: #a8e9e8; }
+  .legend span.branch::before { background: #54c6d3; }
+  button { pointer-events: auto; border: 1px solid #8a5d6d; border-radius: 0; background: #30232a; color: #f5e9ed; padding: 7px 10px; cursor: pointer; font: inherit; }
+  button:hover { background: #49303b; }
+</style>
+<div class="viewer">
+  <canvas id="view" aria-label="Interactive 3D scan preview; drag to orbit, scroll to zoom"></canvas>
+  <div class="top"><div class="badge">FIND YOUR DAUGHTER / 3D SCAN</div><div class="legend"><span>CT</span><span class="aorta">Aorta</span><span class="branch">Branches</span></div></div>
+  <div class="bottom"><span>Drag: turn scan · Scroll: zoom · Double-click: reset</span><button id="save" type="button">Save image</button></div>
+</div>
+<script>
+const scene = __SCENE_DATA__;
+const canvas = document.getElementById('view');
+const ctx = canvas.getContext('2d', {alpha: false, willReadFrequently: true});
+let yaw = 0.55, pitch = 0.36, zoom = 1, dragging = false, lastX = 0, lastY = 0, queued = false;
+const bg = [23, 20, 23];
+const edges = [];
+for (let a = 0; a < 8; a++) for (let b = a + 1; b < 8; b++) {
+  let bits = a ^ b;
+  if (bits === 1 || bits === 2 || bits === 4) edges.push([a, b]);
+}
+function schedule() { if (!queued) { queued = true; requestAnimationFrame(draw); } }
+function draw() {
+  queued = false;
+  const width = Math.max(320, Math.round(canvas.clientWidth));
+  const height = Math.max(300, Math.round(canvas.clientHeight));
+  if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
+  const image = ctx.createImageData(width, height), pixels = image.data;
+  for (let p = 0; p < pixels.length; p += 4) { pixels[p] = bg[0]; pixels[p+1] = bg[1]; pixels[p+2] = bg[2]; pixels[p+3] = 255; }
+  const depth = new Float32Array(width * height); depth.fill(-Infinity);
+  const sy = Math.sin(yaw), cy = Math.cos(yaw), sp = Math.sin(pitch), cp = Math.cos(pitch);
+  const scale = Math.min(width * .66, height * .82) * zoom;
+  function project(point) {
+    const x = point[0], y = point[1], z = point[2];
+    return [width/2 + (-sy*x + cy*y)*scale,
+            height/2 - (-sp*cy*x - sp*sy*y + cp*z)*scale,
+            cp*cy*x + cp*sy*y + sp*z];
+  }
+  function plot(point, color, radius) {
+    const [px, py, z] = project(point), cx = Math.round(px), cy = Math.round(py);
+    for (let dy = -radius; dy <= radius; dy++) for (let dx = -radius; dx <= radius; dx++) {
+      if (dx*dx + dy*dy > radius*radius + 1) continue;
+      const xx = cx + dx, yy = cy + dy;
+      if (xx < 0 || yy < 0 || xx >= width || yy >= height) continue;
+      const at = yy*width + xx;
+      if (z < depth[at]) continue;
+      depth[at] = z;
+      const p = at*4;
+      pixels[p] = color[0]; pixels[p+1] = color[1]; pixels[p+2] = color[2];
+    }
+  }
+  for (const point of scene.ct) { const c = point[3]; plot(point, [Math.min(255,c+10), c, Math.min(255,c+5)], 1); }
+  depth.fill(-Infinity);
+  for (const point of scene.mask) plot(point, [218, 85, 117], 2);
+  ctx.putImageData(image, 0, 0);
+  ctx.lineWidth = 1; ctx.strokeStyle = '#9a737f88';
+  for (const [a,b] of edges) {
+    const p = project(scene.corners[a]), q = project(scene.corners[b]);
+    ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+  }
+  for (const branch of scene.branches) {
+    const selected = !scene.selected_branch || branch.id === scene.selected_branch;
+    const o = project(branch.ostium), s = project(branch.seed), a = project(branch.arrow);
+    ctx.save();
+    ctx.globalAlpha = selected ? 1 : .38;
+    ctx.lineWidth = selected ? 2.5 : 1.5;
+    ctx.strokeStyle = '#54c6d3';
+    ctx.beginPath(); ctx.moveTo(o[0], o[1]); ctx.lineTo(a[0], a[1]); ctx.stroke();
+    const angle = Math.atan2(a[1]-s[1], a[0]-s[0]);
+    ctx.fillStyle = '#54c6d3';
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]);
+    ctx.lineTo(a[0]-10*Math.cos(angle-.45), a[1]-10*Math.sin(angle-.45));
+    ctx.lineTo(a[0]-10*Math.cos(angle+.45), a[1]-10*Math.sin(angle+.45));
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#a8e9e8'; ctx.lineWidth = selected ? 2.5 : 1.5;
+    ctx.beginPath();
+    branch.ring.forEach((point, index) => {
+      const p = project(point);
+      if (index === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+    });
+    ctx.stroke();
+    ctx.fillStyle = '#6dbce8'; ctx.beginPath(); ctx.arc(o[0], o[1], selected ? 5 : 3, 0, 2*Math.PI); ctx.fill();
+    ctx.fillStyle = '#a8e9e8'; ctx.beginPath(); ctx.arc(s[0], s[1], selected ? 4 : 3, 0, 2*Math.PI); ctx.fill();
+    if (selected) {
+      ctx.font = '12px Consolas, monospace';
+      ctx.fillStyle = '#d4f5f3';
+      ctx.fillText(branch.id + ' / r ' + branch.radius_mm.toFixed(2) + ' mm', s[0]+10, s[1]-10);
+    }
+    ctx.restore();
+  }
+  ctx.font = '12px Consolas, monospace'; ctx.fillStyle = '#d5b8c3';
+  ctx.fillText('Scan view: RAS coordinates. Measurements: LPS coordinates.', 18, height - 47);
+}
+canvas.addEventListener('pointerdown', event => { dragging = true; lastX = event.clientX; lastY = event.clientY; canvas.setPointerCapture(event.pointerId); });
+canvas.addEventListener('pointermove', event => {
+  if (!dragging) return;
+  yaw += (event.clientX - lastX)*.008;
+  pitch = Math.max(-1.5, Math.min(1.5, pitch + (event.clientY-lastY)*.008));
+  lastX = event.clientX; lastY = event.clientY; schedule();
+});
+canvas.addEventListener('pointerup', () => { dragging = false; });
+canvas.addEventListener('pointercancel', () => { dragging = false; });
+canvas.addEventListener('wheel', event => { event.preventDefault(); zoom = Math.max(.5, Math.min(3, zoom*Math.exp(-event.deltaY*.001))); schedule(); }, {passive:false});
+canvas.addEventListener('dblclick', () => { yaw=.55; pitch=.36; zoom=1; schedule(); });
+document.getElementById('save').addEventListener('click', () => {
+  const link = document.createElement('a'); link.href = canvas.toDataURL('image/png'); link.download = 'scan_3d.png'; link.click();
+});
+new ResizeObserver(schedule).observe(canvas);
+schedule();
+</script>
+</html>
