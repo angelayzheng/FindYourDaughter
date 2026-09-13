@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from backend.inputs import load_case
-from backend.detection import detect_daughters
+from backend.detectors import detect
 
 
 def _case_id(path: Path) -> str:
@@ -17,10 +17,10 @@ def _case_id(path: Path) -> str:
     return stem
 
 
-def run_case(image_path: Path, mask_path: Path) -> dict[str, Any]:
+def run_case(image_path: Path, mask_path: Path, *, detector: str = "baseline") -> dict[str, Any]:
     """Load one case and return experimental detections in the required schema."""
     case = load_case(image_path, mask_path)
-    result = detect_daughters(case.image, case.aorta_mask)
+    result = detect(case.image, case.aorta_mask, detector=detector)
 
     return {
         "case_id": _case_id(image_path),

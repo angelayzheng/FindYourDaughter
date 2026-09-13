@@ -167,7 +167,8 @@ class DetectionOverlay:
                 actor.GetProperty().SetOpacity(1 if index == self.selected else .5)
             actors[0].GetProperty().SetLineWidth(5 if index == self.selected else 3)
         self.label.SetVisibility(self.visible and self.selected is not None)
-        self.title.SetInput(f"EXPERIMENTAL detector / {len(self.actors)} candidates / overlay {'ON' if self.visible else 'OFF'}")
+        method = self.result.diagnostics.get("detector", "baseline")
+        self.title.SetInput(f"EXPERIMENTAL {method} / {len(self.actors)} candidates / overlay {'ON' if self.visible else 'OFF'}")
         if self.selected is None:
             self.detail.SetInput("No candidates passed the current detector filters")
         else:

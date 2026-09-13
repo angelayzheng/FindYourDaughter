@@ -6,6 +6,11 @@ these candidates instead of an intentionally empty scaffold. This is a starting
 point for annotated evaluation: the real scans still contain questionable
 candidates, and their detection accuracy has not been measured.
 
+An optional [paper-inspired contact detector](contact_detection.md) is available
+through `--detector contact` in the evaluator, native viewer, static preview, and
+synthetic scorer. The baseline described below remains unchanged and is the
+default. See that guide for the current side-by-side comparison and tradeoffs.
+
 ## Run and inspect
 
 Open the native VTK detector viewer with:
@@ -160,12 +165,16 @@ python scripts/generate_synthetic_cases.py --output tmp/branchseed/synthetic --c
 python scripts/evaluate_synthetic_detection.py --dataset tmp/branchseed/synthetic --output tmp/branchseed/synthetic_metrics.json
 ```
 
-With one-to-one ostium matching within a **development tolerance of 3 mm**, all
-30 generated daughters matched, with no extra candidates or missed daughters.
-Mean absolute errors were 0.48 mm for ostium position, 0.66 mm for seed position,
-and 0.06 mm for radius. These simple enhanced tubes informed development and are
+With one-to-one ostium matching within a **development tolerance of 3 mm**, the
+current generator produced 30 daughters: 27 matched, with no extra candidates
+and three misses. Mean errors were 0.70 mm for ostium position, 0.84 mm for seed
+position, and 0.51 mm absolute radius error. These tubes informed development and are
 not a held-out validation set or the official challenge scorer. This result
 does not establish performance on patient scans.
+
+See the [paired comparison](contact_detection.md#controlled-comparison) with the
+optional contact detector. The previously documented 30/30 result was not
+reproduced by this run and has been superseded by these measurements.
 
 All 25 supplied real CT/mask pairs completed loading and detection, including
 compressed `.nii` files and subject024. On this Windows machine with Python

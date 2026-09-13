@@ -10,6 +10,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core import ScanCase, VolumeViewOptions
+from backend.detectors import DETECTOR_NAMES
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -17,6 +18,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--image", type=Path, required=True, help="CT .nii or .nii.gz")
     parser.add_argument("--detect", action="store_true",
                         help="Run the experimental detector and overlay branches on its working grid")
+    parser.add_argument("--detector", choices=DETECTOR_NAMES,
+                        help="Algorithm to overlay (requires --detect; default: baseline)")
     parser.add_argument("--branch", type=int,
                         help="Initially focus this candidate number (1-based; requires --detect)")
     parser.add_argument(
@@ -72,6 +75,8 @@ def main(argv: list[str] | None = None) -> None:
         parser.error("--offscreen requires --screenshot")
     if args.branch is not None and (not args.detect or args.branch < 1):
         parser.error("--branch requires --detect and a positive candidate number")
+    if args.detector is not None and not args.detect:
+        parser.error("--detector requires --detect")
     if args.detect and (args.no_mask or args.frame != 0):
         parser.error("--detect requires an aorta mask and a 3-D scan (--frame 0)")
     try:
@@ -106,12 +111,12 @@ def main(argv: list[str] | None = None) -> None:
         if mask_path is None:
             parser.error("--detect requires an aorta mask; provide --mask")
         from backend.inputs import load_case
-        from backend.detection import detect_daughters
+        from backend.detectors import detect
         from desktop.detection_overlay import scan_case_from_backend
 
-        print("Loading and detecting candidate arteries...", flush=True)
+        print(f"Loading and detecting candidate arteries ({args.detector or 'baseline'})...", flush=True)
         working_case = load_case(args.image, mask_path)
-        detection = detect_daughters(working_case.image, working_case.aorta_mask)
+        detection = detect(working_case.image, working_case.aorta_mask, detector=args.detector or "baseline")
         case = scan_case_from_backend(working_case)
         del working_case
         print(f"{len(detection.branches)} experimental candidates; Left / Right to browse, J to focus, D to toggle", flush=True)

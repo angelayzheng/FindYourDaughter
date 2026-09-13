@@ -145,7 +145,7 @@ class DetectionViewerCliTest(unittest.TestCase):
         from scripts.view_nifti_3d import main
 
         for flags in (("--detect", "--no-mask"), ("--detect", "--frame", "1"),
-                      ("--branch", "1"), ("--detect", "--branch", "0")):
+                      ("--branch", "1"), ("--detect", "--branch", "0"), ("--detector", "contact")):
             with self.subTest(flags=flags), redirect_stderr(StringIO()), self.assertRaises(SystemExit) as error:
                 main(["--image", "unused.nii", *flags])
             self.assertEqual(error.exception.code, 2)

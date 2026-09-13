@@ -12,7 +12,7 @@ if __name__ == "__main__":
 import numpy as np
 import SimpleITK as sitk
 
-from backend.detection import detect_daughters
+from backend.detectors import DETECTOR_NAMES, detect
 from backend.inputs import load_case
 from backend.pipeline import _case_id
 
@@ -74,7 +74,7 @@ def export_overlays(case, result, output: Path) -> list[Path]:
                 ax.set_title(f"branch_{page*6+row+1:03d} | {('native XY', 'native XZ', 'native YZ')[column]} | r={branch.radius_mm:.1f} mm")
                 ax.set_xlabel("native grid distance (mm)")
                 ax.set_aspect("equal")
-        fig.suptitle(f"{case_id} | EXPERIMENTAL candidates, not reference annotations\n"
+        fig.suptitle(f"{case_id} | {result.diagnostics.get('detector', 'baseline')} | EXPERIMENTAL candidates, not reference annotations\n"
                      "red: parent mask | yellow: proposed ostium | cyan: projected path and direction to 5 mm seed\n"
                      "CT/mask show a narrow slab at the ostium; projected paths can extend outside this slab",
                      fontsize=12)
@@ -99,10 +99,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", type=Path, required=True)
     parser.add_argument("--aorta-mask", type=Path, required=True)
-    parser.add_argument("--output-dir", type=Path, default=Path("nifti_previews/detection"))
+    parser.add_argument("--output-dir", type=Path, help="Default: nifti_previews/detection, with a contact subfolder for that detector")
+    parser.add_argument("--detector", choices=DETECTOR_NAMES, default="baseline")
     args = parser.parse_args()
+    if args.output_dir is None:
+        args.output_dir = Path("nifti_previews/detection")
+        if args.detector != "baseline":
+            args.output_dir /= args.detector
     case = load_case(args.image, args.aorta_mask)
-    result = detect_daughters(case.image, case.aorta_mask)
+    result = detect(case.image, case.aorta_mask, detector=args.detector)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     case_id = _case_id(args.image)
     prediction = {"case_id": case_id, "parent": {"instance_id": "aorta"}, "daughters": result.daughters()}
@@ -113,7 +118,8 @@ def main() -> int:
     (args.output_dir / f"{case_id}_diagnostics.json").write_text(json.dumps(details, indent=2) + "\n", encoding="utf-8")
     export_overlays(case, result, args.output_dir)
     print(f"{case_id}: {len(result.branches)} experimental candidates; outputs in {args.output_dir}")
-    print(json.dumps(result.diagnostics))
+    # Per-contact paths can be large; keep them in the diagnostic file.
+    print(json.dumps({key: value for key, value in result.diagnostics.items() if key != "contacts"}))
     return 0
 
 
