@@ -202,6 +202,37 @@ not a global optimum or a real held-out accuracy estimate. Existing default
 predictions were verified identical across all 20 detector/case pairs before
 and after exposing parameters. Tuned behavior requires an explicit `--config`.
 
+## Fresh synthetic model comparison (2026-09-13)
+
+A new full synthetic cohort was generated after the preceding validation runs
+using seed `20260913`: 20 cases, 48 daughters, 128 x 128 x 192 voxels, and the
+default 0.8 x 0.8 x 1.0 mm spacing. All four current detectors were run with
+their unchanged default configurations and matched one-to-one at the existing
+3 mm ostium tolerance. The generated data and raw reports are retained locally
+under the ignored directory `tmp/synthetic-full-20260913/`.
+
+| Detector | Matched / 48 | Predictions | Extras | Missed | Precision | Recall | F1 | Mean ostium / seed / radius error (mm) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 44 | 48 | 4 | 4 | 91.7% | 91.7% | 91.7% | 0.881 / 0.612 / 0.740 |
+| Contact | 45 | 47 | 2 | 3 | 95.7% | 93.8% | 94.7% | 0.764 / 0.818 / 0.779 |
+| Fusion | 46 | 49 | 3 | 2 | 93.9% | 95.8% | 94.9% | 0.834 / 0.707 / 0.825 |
+| Refined | 45 | 48 | 3 | 3 | 93.8% | 93.8% | 93.8% | 0.855 / 0.672 / 0.851 |
+
+Reproduce the cohort and reports with:
+
+```powershell
+python scripts/generate_synthetic_cases.py --output tmp/synthetic-full-20260913 --cases 20 --seed 20260913 --size 128 128 192
+python scripts/evaluate_synthetic_detection.py --dataset tmp/synthetic-full-20260913 --detector baseline --output tmp/synthetic-full-20260913/baseline.json
+python scripts/evaluate_synthetic_detection.py --dataset tmp/synthetic-full-20260913 --detector contact --output tmp/synthetic-full-20260913/contact.json
+python scripts/evaluate_synthetic_detection.py --dataset tmp/synthetic-full-20260913 --detector fusion --output tmp/synthetic-full-20260913/fusion.json
+python scripts/evaluate_synthetic_detection.py --dataset tmp/synthetic-full-20260913 --detector refined --output tmp/synthetic-full-20260913/refined.json
+```
+
+These are controlled tube-recovery measurements, not clinical accuracy or
+official challenge scores. The four detectors use different proposal sets, so
+the mean landmark errors describe each detector's matched subset and should not
+be interpreted as a complete ranking of localization quality.
+
 ## Per-branch error review
 
 Export scored assignments and nearest-contact diagnostic evidence without
