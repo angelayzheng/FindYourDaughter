@@ -5,7 +5,6 @@ nifti_previews/
 nifti_histograms/
 synthetic_dataset/
 synthetic_previews/*.png
-timing_results/
 *.zip
 __pycache__/
 *.py[cod]
