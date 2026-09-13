@@ -188,7 +188,7 @@ st.markdown(
 
 panel = st.segmented_control(
     "Panel",
-    ["Simple View", "Detailed View", "Results", "Benchmark Results"],
+    ["Simple View", "Detailed View", "VTK Snapshot", "Results", "Benchmark Results"],
     default="Simple View",
     label_visibility="collapsed",
     width="stretch",
@@ -382,15 +382,6 @@ st.markdown(
 )
 if detection_error:
     st.error(f"Detection failed: {detection_error}")
-
-panel = st.segmented_control(
-    "Panel",
-    ["Simple View", "Detailed View", "VTK Snapshot", "Results", "Benchmark Results"],
-    default="Simple View",
-    label_visibility="collapsed",
-    width="stretch",
-    key="main_panel",
-)
 
 if panel != "VTK Snapshot":
     old_session = st.session_state.pop("vtk_session", None)
