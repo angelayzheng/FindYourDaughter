@@ -1,10 +1,12 @@
 # Refined detector and failure analysis
 
 `refined` is a separate experimental algorithm. The baseline, contact, and fusion
-implementations, their settings, and the default `run.py` behavior are unchanged.
+default settings and predictions, and the default `run.py` behavior are preserved.
 Their five draft-case prediction JSON envelopes were compared before and after
 this addition and are identical. The new algorithm uses only CT and the supplied
 parent mask, runs offline on CPU, and exports the existing six daughter fields.
+Optional settings are now exposed through [configuration files](parameter_tuning.md);
+the measured comparison below records the original defaults.
 
 ```powershell
 python run.py --image dataset/subject001/orig1.nii --aorta-mask dataset/subject001/mask1.nii --output nifti_previews/refined_prediction.json --detector refined
@@ -40,7 +42,11 @@ reviewing the accepted source proposals.
 
 ## Remaining disagreements
 
-The following are all six missed draft references after refinement. A distant
+This section records the original Refined defaults. The separate
+[parameter search](evaluation.md#parameter-tuning-results-2026-09-13) recovers
+case 19 / `branch_001` and reduces extras without replacing these defaults.
+
+The following are all six missed draft references with default refinement. A distant
 nearest contact is only a clue; it does not establish the exact anatomical cause.
 
 | Case / reference | Observed failure evidence | Remaining work |

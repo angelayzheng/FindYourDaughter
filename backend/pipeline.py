@@ -17,10 +17,12 @@ def _case_id(path: Path) -> str:
     return stem
 
 
-def run_case(image_path: Path, mask_path: Path, *, detector: str = "baseline") -> dict[str, Any]:
+def run_case(image_path: Path, mask_path: Path, *, detector: str = "baseline",
+             parameters: dict | None = None) -> dict[str, Any]:
     """Load one case and return experimental detections in the required schema."""
     case = load_case(image_path, mask_path)
-    result = detect(case.image, case.aorta_mask, detector=detector)
+    result = detect(case.image, case.aorta_mask, detector=detector,
+                    **({"parameters": parameters} if parameters is not None else {}))
 
     return {
         "case_id": _case_id(image_path),

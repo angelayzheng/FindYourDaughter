@@ -20,6 +20,7 @@ def main(argv: list[str] | None = None) -> None:
                         help="Run the experimental detector and overlay branches on its working grid")
     parser.add_argument("--detector", choices=DETECTOR_NAMES,
                         help="Algorithm to overlay (requires --detect; default: baseline)")
+    parser.add_argument("--config", type=Path, help="Saved detector configuration (requires --detect)")
     parser.add_argument("--branch", type=int,
                         help="Initially focus this candidate number (1-based; requires --detect)")
     parser.add_argument(
@@ -77,9 +78,14 @@ def main(argv: list[str] | None = None) -> None:
         parser.error("--branch requires --detect and a positive candidate number")
     if args.detector is not None and not args.detect:
         parser.error("--detector requires --detect")
+    if args.config is not None and not args.detect:
+        parser.error("--config requires --detect")
     if args.detect and (args.no_mask or args.frame != 0):
         parser.error("--detect requires an aorta mask and a 3-D scan (--frame 0)")
     try:
+        if args.detect:
+            from backend.configuration import configuration, load_configuration
+            config = load_configuration(args.config, detector=args.detector) if args.config else configuration(args.detector or "baseline")
         options = VolumeViewOptions(
             frame=args.frame,
             max_dimension=args.max_dimension,
@@ -88,7 +94,7 @@ def main(argv: list[str] | None = None) -> None:
             min_intensity=args.min_intensity,
             opacity=args.opacity,
         )
-    except ValueError as error:
+    except (ValueError, OSError) as error:
         parser.error(str(error))
     mask_path = args.mask
     if mask_path is None and not args.no_mask and "mask" not in args.image.name.lower():
@@ -114,9 +120,10 @@ def main(argv: list[str] | None = None) -> None:
         from backend.detectors import detect
         from desktop.detection_overlay import scan_case_from_backend
 
-        print(f"Loading and detecting candidate arteries ({args.detector or 'baseline'})...", flush=True)
+        print(f"Loading and detecting candidate arteries ({config['detector']})...", flush=True)
         working_case = load_case(args.image, mask_path)
-        detection = detect(working_case.image, working_case.aorta_mask, detector=args.detector or "baseline")
+        detection = detect(working_case.image, working_case.aorta_mask,
+                           detector=config["detector"], parameters=config["parameters"])
         case = scan_case_from_backend(working_case)
         del working_case
         print(f"{len(detection.branches)} experimental candidates; Left / Right to browse, J to focus, D to toggle", flush=True)

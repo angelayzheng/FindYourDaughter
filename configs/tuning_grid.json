@@ -1,0 +1,42 @@
+{
+  "matching_tolerance_mm": 3.0,
+  "shortlist_per_detector": 3,
+  "ranking": "draft F1, then recall, then fewer changed settings, then configuration ID",
+  "synthetic_guard": "development F1 and recall must not fall below the detector default",
+  "families": [
+    {
+      "detector": "baseline",
+      "grid": {
+        "baseline.intensity_fraction": [0.35, 0.45, 0.55, 0.65],
+        "baseline.min_vesselness": [0.07, 0.10, 0.15]
+      }
+    },
+    {
+      "detector": "contact",
+      "grid": {
+        "contact.intensity_fraction": [0.25, 0.30, 0.35, 0.40, 0.45],
+        "contact.min_vesselness": [0.07, 0.10, 0.15],
+        "contact.tube_reach_mm": [1.5, 2.0]
+      }
+    },
+    {
+      "detector": "fusion",
+      "grid": {
+        "baseline.intensity_fraction": [0.45, 0.55],
+        "contact.intensity_fraction": [0.30, 0.35, 0.40],
+        "contact.min_vesselness": [0.10, 0.15],
+        "fusion.minimum_support_fraction": [0.8, 1.0]
+      }
+    },
+    {
+      "detector": "refined",
+      "grid": {
+        "baseline.intensity_fraction": [0.45, 0.55],
+        "contact.intensity_fraction": [0.30, 0.35, 0.40],
+        "contact.min_vesselness": [0.10, 0.15],
+        "fusion.minimum_support_fraction": [0.8, 1.0],
+        "refined.minimum_natural_sections": [0, 1]
+      }
+    }
+  ]
+}
