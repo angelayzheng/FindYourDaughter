@@ -39,9 +39,19 @@ def main(argv: list[str] | None = None) -> int:
         from backend.cli import build_parser
 
         parser = build_parser()
+        parser.add_argument(
+            "--gui",
+            action="store_true",
+            help="Launch the native VTK viewer; use --image or --subject for its input",
+        )
+        parser.add_argument(
+            "--webui",
+            action="store_true",
+            help="Launch the local Streamlit inspection dashboard",
+        )
         parser.epilog = (
-            "Developer UI modes: 'python run.py --gui --subject dataset/subject001' "
-            "or 'python run.py --webui'."
+            "Examples: 'python run.py --gui --subject dataset/subject001' or "
+            "'python run.py --webui'."
         )
         parser.print_help()
         return 0
