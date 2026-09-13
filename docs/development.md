@@ -199,6 +199,11 @@ measurements. It displays each candidate's parent ID, physical ostium and
 detector result is reported explicitly.
 These candidates are proposals, not verified anatomical labels.
 
+The **Benchmark Results** panel is independent of scan selection. Set its
+results folder (the repository root by default) and choose any recursively
+discovered CSV, such as timing, synthetic-evaluation, or review output. The
+selected table can also be downloaded unchanged from the dashboard.
+
 The dashboard is titled **Find Your Daughter** and uses a dark, flat rose
 palette with light text. A compact project logo appears above the sidebar controls.
 The case summary and sidebar controls start near the top
@@ -226,6 +231,12 @@ voxel indices for browsing, not physical-space detection coordinates. Each
 slider or toggle change starts a new render automatically; download the image
 as PNG when ready. The detector measurements are currently overlaid in the fast
 view and listed in Results; the detailed VTK PNG remains a volume/slice view.
+A **Denoise CT haze** control is available in Detailed View. It replaces voxels
+that lack enough similarly bright immediate 3-D neighbors with a local median;
+adjust the brightness tolerance and required neighbor count in the sidebar. This
+is a visualization filter only: source scan tensors and evaluator inputs are not
+modified. The native viewer exposes the same filter with `--denoise`,
+`--denoise-tolerance`, and `--denoise-neighbors`.
 A progress bar shows elapsed rendering time, and a completion message appears
 when the image is ready. The dashboard keeps a VTK render process and its loaded
 scan alive while the selected case, frame, and CT sampling limit stay the same.

@@ -55,6 +55,9 @@ def main(argv: list[str] | None = None) -> None:
         type=float,
         help="Hide volume and slice pixels below this intensity",
     )
+    parser.add_argument("--denoise", action="store_true", help="Suppress voxels without locally similar-intensity neighbors")
+    parser.add_argument("--denoise-tolerance", type=float, default=40.0, help="Denoiser intensity tolerance (default: 40)")
+    parser.add_argument("--denoise-neighbors", type=int, default=2, help="Required similar neighbors, 1-26 (default: 2)")
     parser.add_argument(
         "--opacity",
         type=float,
@@ -105,6 +108,9 @@ def main(argv: list[str] | None = None) -> None:
             window=args.window if args.window is not None else (600 if args.detect else 400),
             level=args.level if args.level is not None else (200 if args.detect else 40),
             min_intensity=args.min_intensity,
+            denoise=args.denoise,
+            denoise_tolerance=args.denoise_tolerance,
+            denoise_min_neighbors=args.denoise_neighbors,
             opacity=args.opacity,
         )
     except (ValueError, OSError) as error:

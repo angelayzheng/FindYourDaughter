@@ -36,6 +36,9 @@ class VolumeViewOptions:
     window: float = 400.0
     level: float = 40.0
     min_intensity: float | None = None
+    denoise: bool = False
+    denoise_tolerance: float = 40.0
+    denoise_min_neighbors: int = 2
     opacity: float = 0.12
 
     def __post_init__(self) -> None:
@@ -47,6 +50,10 @@ class VolumeViewOptions:
             raise ValueError("window must be positive and all display settings must be finite")
         if self.min_intensity is not None and not np.isfinite(self.min_intensity):
             raise ValueError("min_intensity must be finite when provided")
+        if not np.isfinite(self.denoise_tolerance) or self.denoise_tolerance < 0:
+            raise ValueError("denoise_tolerance must be finite and nonnegative")
+        if not isinstance(self.denoise_min_neighbors, (int, np.integer)) or not 1 <= self.denoise_min_neighbors <= 26:
+            raise ValueError("denoise_min_neighbors must be an integer between 1 and 26")
         if not 0 <= self.opacity <= 0.5:
             raise ValueError("opacity must be between 0 and 0.5")
 

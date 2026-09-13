@@ -1,6 +1,7 @@
 """Local, CPU-only inspection dashboard for CT scans and aorta branches."""
 
 from concurrent.futures import ThreadPoolExecutor
+import csv
 from pathlib import Path
 import json
 import sys
@@ -21,6 +22,7 @@ from frontend.browser_scene import scene_html, scene_payload
 from frontend.cases import find_subjects, mask_choices
 from frontend.point_cloud import render_projection
 from frontend.render import VTKRenderSession, VTKUnavailable, render_3d
+from frontend.results import discover_csv_files, read_csv_file
 
 
 @st.cache_resource(show_spinner=False)
@@ -165,6 +167,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+panel = st.segmented_control(
+    "Panel",
+    ["Simple View", "Detailed View", "Results", "Benchmark Results"],
+    default="Simple View",
+    label_visibility="collapsed",
+    width="stretch",
+    key="main_panel",
+)
+
 with st.sidebar:
     st.image(ROOT / "images" / "FindYourDaughter-Logo-Transparent.png", width=240)
     st.caption("CT review · daughter branches from the aorta")
@@ -178,24 +189,61 @@ with st.sidebar:
         subjects = find_subjects(dataset)
         if not subjects:
             st.info("No NIfTI scans were found here. Check the dataset folder.")
-            st.stop()
-        subject = st.selectbox(
-            "Subject", list(subjects), key=f"subject:{dataset.resolve()}"
+            if panel != "Benchmark Results":
+                st.stop()
+        if not subjects and panel == "Benchmark Results":
+            st.caption("Benchmark Results does not require a scan selection.")
+        if subjects:
+            subject = st.selectbox(
+                "Subject", list(subjects), key=f"subject:{dataset.resolve()}"
+            )
+            image = st.selectbox(
+                "CT image",
+                subjects[subject],
+                format_func=lambda path: path.name,
+                key=f"image:{dataset.resolve()}:{subject}",
+            )
+            masks = [None, *mask_choices(image)]
+            mask = st.selectbox(
+                "Aorta mask",
+                masks,
+                format_func=lambda path: "None" if path is None else path.name,
+                index=1 if len(masks) == 2 else 0,
+                key=f"mask:{image.resolve()}",
+            )
+
+if panel == "Benchmark Results":
+    st.title("Benchmark Results")
+    results_root = Path(
+        st.text_input("Results folder", str(ROOT), help="Recursively search for CSV benchmark outputs.")
+    ).expanduser()
+    csv_files = discover_csv_files(results_root)
+    if not csv_files:
+        st.info(f"No CSV result files found under {results_root}.")
+    else:
+        selected_csv = st.selectbox(
+            "CSV result file",
+            csv_files,
+            format_func=lambda path: str(path.relative_to(results_root.resolve())),
         )
-        image = st.selectbox(
-            "CT image",
-            subjects[subject],
-            format_func=lambda path: path.name,
-            key=f"image:{dataset.resolve()}:{subject}",
-        )
-        masks = [None, *mask_choices(image)]
-        mask = st.selectbox(
-            "Aorta mask",
-            masks,
-            format_func=lambda path: "None" if path is None else path.name,
-            index=1 if len(masks) == 2 else 0,
-            key=f"mask:{image.resolve()}",
-        )
+        try:
+            columns, rows = read_csv_file(selected_csv)
+        except (OSError, UnicodeError, csv.Error) as error:
+            st.error(f"Could not read {selected_csv}: {error}")
+        else:
+            st.caption(f"{len(rows)} rows · {len(columns)} columns")
+            if columns:
+                st.dataframe(rows, hide_index=True, width="stretch")
+                st.download_button(
+                    "Download CSV",
+                    selected_csv.read_bytes(),
+                    file_name=selected_csv.name,
+                    mime="text/csv",
+                    on_click="ignore",
+                )
+            else:
+                st.warning("The selected CSV has no header row.")
+    st.stop()
 
 try:
     image_mtime = image.stat().st_mtime_ns
@@ -252,15 +300,6 @@ st.markdown(
 )
 if detection_error:
     st.error(f"Detection failed: {detection_error}")
-
-panel = st.segmented_control(
-    "Panel",
-    ["Simple View", "Detailed View", "Results"],
-    default="Simple View",
-    label_visibility="collapsed",
-    width="stretch",
-    key="main_panel",
-)
 
 if panel == "Simple View":
     old_session = st.session_state.pop("vtk_session", None)
@@ -348,6 +387,17 @@ elif panel == "Detailed View":
                 "Minimum intensity", -1000, 1500, 100, disabled=not use_threshold
             )
             opacity = st.slider("Volume opacity", 0.0, 0.5, 0.12, 0.01)
+            denoise = st.checkbox(
+                "Denoise CT haze",
+                False,
+                help="Replace voxels without enough similarly bright immediate 3-D neighbors.",
+            )
+            denoise_tolerance = st.slider(
+                "Denoise brightness tolerance", 0.0, 200.0, 40.0, 5.0, disabled=not denoise
+            )
+            denoise_min_neighbors = st.slider(
+                "Denoise similar neighbors", 1, 26, 2, disabled=not denoise
+            )
             max_dimension = st.select_slider(
                 "CT sampling limit", [64, 96, 128, 192, 256], value=128
             )
@@ -403,6 +453,9 @@ elif panel == "Detailed View":
             window,
             level,
             threshold if use_threshold else None,
+            denoise,
+            denoise_tolerance,
+            denoise_min_neighbors,
             opacity,
             max_dimension,
             azimuth,
@@ -418,7 +471,14 @@ elif panel == "Detailed View":
             plane_opacity,
             slice_indices,
         )
-        session_key = (case_key, frame, max_dimension)
+        session_key = (
+            case_key,
+            frame,
+            max_dimension,
+            denoise,
+            denoise_tolerance,
+            denoise_min_neighbors,
+        )
         if st.session_state.get("vtk_session_key") != session_key:
             old_session = st.session_state.pop("vtk_session", None)
             if old_session is not None:
@@ -432,6 +492,9 @@ elif panel == "Detailed View":
                     window=window,
                     level=level,
                     min_intensity=threshold if use_threshold else None,
+                    denoise=denoise,
+                    denoise_tolerance=denoise_tolerance,
+                    denoise_min_neighbors=denoise_min_neighbors,
                     opacity=opacity,
                 )
                 started = monotonic()
