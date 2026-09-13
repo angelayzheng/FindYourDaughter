@@ -4,7 +4,9 @@
 arteries arising directly from the supplied parent mask. `run.py` now exports
 these candidates instead of an intentionally empty scaffold. This is a starting
 point for annotated evaluation: the real scans still contain questionable
-candidates, and their detection accuracy has not been measured.
+candidates, and expert-validated detection accuracy has not been measured.
+See [draft-reference evaluation](evaluation.md) to run both current algorithms
+against the supplied `eval_set` and inspect matches and unmatched candidates.
 
 An optional [paper-inspired contact detector](contact_detection.md) is available
 through `--detector contact` in the evaluator, native viewer, static preview, and

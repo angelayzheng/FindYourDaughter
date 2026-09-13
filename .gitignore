@@ -12,3 +12,4 @@ __pycache__/
 prediction.json
 tmp/
 papers/
+eval_set/

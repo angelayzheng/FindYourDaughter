@@ -3,7 +3,8 @@
 Branchseed Challenge submission. The CPU backend proposes direct daughter
 arteries from CT and a supplied parent-aorta mask. The original baseline remains
 the default; an optional [paper-inspired detector](docs/contact_detection.md)
-is available. Real-scan detection accuracy remains unmeasured.
+is available. [Draft-reference evaluation](docs/evaluation.md) is supported;
+expert-validated detection accuracy remains unmeasured.
 
 The bundled offline wheels target CPython 3.14 on Windows x64:
 
