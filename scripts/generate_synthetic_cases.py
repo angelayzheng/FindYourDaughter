@@ -245,6 +245,99 @@ def tube_distance_mask(
     return result
 
 
+def ellipsoid_mask(
+    shape_zyx: tuple[int, int, int],
+    spacing_xyz_mm: tuple[float, float, float],
+    center_xyz_mm: np.ndarray,
+    radii_xyz_mm: np.ndarray,
+) -> np.ndarray:
+    """Rasterize one solid ellipsoid into a native z/y/x array."""
+    spacing = np.asarray(spacing_xyz_mm, dtype=float)
+    shape_xyz = np.asarray(shape_zyx[::-1])
+    lower = np.maximum(np.floor((center_xyz_mm - radii_xyz_mm) / spacing).astype(int), 0)
+    upper = np.minimum(np.ceil((center_xyz_mm + radii_xyz_mm) / spacing).astype(int), shape_xyz - 1)
+    if np.any(lower > upper):
+        return np.zeros(shape_zyx, dtype=bool)
+    ix, iy, iz = np.meshgrid(
+        np.arange(lower[0], upper[0] + 1),
+        np.arange(lower[1], upper[1] + 1),
+        np.arange(lower[2], upper[2] + 1),
+        indexing="ij",
+    )
+    coordinates = np.stack((ix, iy, iz), axis=-1).astype(float) * spacing
+    local = np.sum(((coordinates - center_xyz_mm) / radii_xyz_mm) ** 2, axis=-1) <= 1
+    result = np.zeros(shape_zyx, dtype=bool)
+    result[lower[2] : upper[2] + 1, lower[1] : upper[1] + 1, lower[0] : upper[0] + 1] = local.transpose(2, 1, 0)
+    return result
+
+
+def centerline_distance(first: np.ndarray, second: np.ndarray) -> float:
+    distances = np.linalg.norm(first[:, None, :] - second[None, :, :], axis=2)
+    return float(distances.min())
+
+
+def add_organ_blobs(
+    image: np.ndarray,
+    shape_zyx: tuple[int, int, int],
+    spacing_xyz_mm: tuple[float, float, float],
+    physical_size_xyz_mm: np.ndarray,
+    count: int,
+    rng: np.random.Generator,
+) -> None:
+    """Add solid organs or lesions with varied size and CT-like intensity."""
+    center_xy = physical_size_xyz_mm[:2] / 2
+    for _ in range(count):
+        center = np.array([
+            center_xy[0] + rng.uniform(-physical_size_xyz_mm[0] * 0.25, physical_size_xyz_mm[0] * 0.25),
+            center_xy[1] + rng.uniform(-physical_size_xyz_mm[1] * 0.25, physical_size_xyz_mm[1] * 0.25),
+            rng.uniform(physical_size_xyz_mm[2] * 0.12, physical_size_xyz_mm[2] * 0.88),
+        ])
+        radii = np.array([
+            rng.uniform(5.0, physical_size_xyz_mm[0] * 0.13),
+            rng.uniform(5.0, physical_size_xyz_mm[1] * 0.13),
+            rng.uniform(4.0, min(22.0, physical_size_xyz_mm[2] * 0.10)),
+        ])
+        intensity = float(rng.choice((20.0, 80.0, 130.0, 260.0, 700.0)))
+        image[ellipsoid_mask(shape_zyx, spacing_xyz_mm, center, radii)] = intensity
+
+
+def sample_distractor_tube(
+    parent_centerline_xyz_mm: np.ndarray,
+    parent_radii_mm: np.ndarray,
+    physical_size_xyz_mm: np.ndarray,
+    rng: np.random.Generator,
+) -> Tube:
+    """Create a bright, disconnected tube that may resemble a daughter."""
+    z_mm = float(rng.uniform(physical_size_xyz_mm[2] * 0.16, physical_size_xyz_mm[2] * 0.84))
+    parent_center, tangent = interpolate_path_at_z(parent_centerline_xyz_mm, z_mm)
+    parent_radius = float(np.interp(z_mm, parent_centerline_xyz_mm[:, 2], parent_radii_mm))
+    reference = np.array([0.0, 0.0, 1.0])
+    if abs(float(np.dot(tangent, reference))) > 0.92:
+        reference = np.array([0.0, 1.0, 0.0])
+    radial_1 = normalize(np.cross(tangent, reference))
+    radial_2 = normalize(np.cross(tangent, radial_1))
+    angle = float(rng.uniform(0, 2 * np.pi))
+    radial = normalize(np.cos(angle) * radial_1 + np.sin(angle) * radial_2)
+    gap = float(rng.uniform(6.0, 16.0))
+    start = parent_center + radial * (parent_radius + gap)
+    direction = normalize(radial * rng.uniform(0.55, 0.9) + tangent * rng.uniform(-0.65, 0.65))
+    side = normalize(np.cross(direction, radial))
+    length = float(rng.uniform(35.0, 70.0))
+    hook = float(rng.uniform(5.0, 14.0))
+    hook_start = start + direction * length * 0.72
+    landmarks = np.array([
+        start,
+        start + direction * length * 0.34,
+        hook_start,
+        hook_start + direction * length * 0.16 + side * hook,
+        hook_start + direction * length * 0.16 + side * hook * 1.35,
+    ])
+    points = resample_centerline(smooth_centerline(landmarks, samples_per_segment=12), 49)
+    radius = float(rng.uniform(1.5, 4.5))
+    intensity = float(rng.choice((170.0, 280.0, 700.0, 900.0)))
+    return Tube(points, radius, intensity)
+
+
 def sample_branch(
     aorta_center_xyz_mm: np.ndarray,
     aorta_radius_mm: float,
@@ -253,6 +346,9 @@ def sample_branch(
     radius_mm: float,
     angle: float,
     max_curvature_mm: float,
+    min_branch_angle_deg: float,
+    max_branch_angle_deg: float,
+    hook_mm: float,
     rng: np.random.Generator,
     *,
     parent_centerline_xyz_mm: np.ndarray | None = None,
@@ -273,15 +369,19 @@ def sample_branch(
     radial_1 = normalize(np.cross(tangent, reference))
     radial_2 = normalize(np.cross(tangent, radial_1))
     radial = normalize(np.cos(angle) * radial_1 + np.sin(angle) * radial_2)
-    elevation = float(rng.uniform(0.10, 0.32))
-    direction = normalize(np.cos(elevation) * radial + np.sin(elevation) * tangent)
+    branch_angle = np.deg2rad(rng.uniform(min_branch_angle_deg, max_branch_angle_deg))
+    direction = normalize(np.cos(branch_angle) * tangent + np.sin(branch_angle) * radial)
     ostium = center + radial * parent_radius
     curvature_axis = normalize(np.cross(direction, radial))
     curvature = float(rng.uniform(-max_curvature_mm, max_curvature_mm))
     control_1 = ostium + direction * length_mm * 0.30 + radial * radius_mm * 0.15
-    control_2 = ostium + direction * length_mm * 0.72 + curvature_axis * curvature
-    end = ostium + direction * length_mm
-    points = smooth_centerline(np.array([ostium, control_1, control_2, end]), samples_per_segment=12)
+    hook_start = ostium + direction * length_mm * 0.68
+    hook_mid = hook_start + direction * length_mm * 0.17 + curvature_axis * (curvature + hook_mm)
+    end = hook_start + direction * length_mm * 0.17 + curvature_axis * (curvature + hook_mm * 1.35)
+    points = smooth_centerline(
+        np.array([ostium, control_1, hook_start, hook_mid, end]),
+        samples_per_segment=12,
+    )
     points = resample_centerline(points, 49)
     # A broad root collar overlaps the parent wall and eases into the daughter lumen.
     root_radius = max(radius_mm * 1.35, radius_mm + parent_radius * 0.08)
@@ -314,6 +414,13 @@ def generate_case(
     spacing_xyz_mm: tuple[float, float, float],
     curvature_mm: float = 5.0,
     noise_std: float = 8.0,
+    min_branch_angle_deg: float = 35.0,
+    max_branch_angle_deg: float = 75.0,
+    min_daughter_length_mm: float = 35.0,
+    max_daughter_length_mm: float = 70.0,
+    hook_mm: float = 8.0,
+    distractor_tubes: int = 8,
+    organ_blobs: int = 8,
 ) -> dict:
     rng = np.random.default_rng(seed + case_index)
     nx, ny, nz = size_xyz
@@ -339,6 +446,7 @@ def generate_case(
     parent = Tube(main_points, aorta_radius, 350.0, parent_radii)
     parent_mask = tube_distance_mask(shape_zyx, spacing_xyz_mm, parent)
     image = create_body_like_volume(shape_zyx, spacing_xyz_mm, rng, noise_std)
+    add_organ_blobs(image, shape_zyx, spacing_xyz_mm, physical_size, organ_blobs, rng)
     image[parent_mask] = parent.intensity
 
     z_min = max(22.0, physical_size[2] * 0.16)
@@ -358,7 +466,7 @@ def generate_case(
             if not angularly_separated:
                 continue
             radius = float(rng.uniform(2.5, 4.5))
-            length = float(rng.uniform(18.0, 32.0))
+            length = float(rng.uniform(min_daughter_length_mm, max_daughter_length_mm))
             daughter, truth = sample_branch(
                 aorta_center_xyz,
                 aorta_radius,
@@ -367,6 +475,9 @@ def generate_case(
                 radius,
                 angle,
                 curvature_mm,
+                min_branch_angle_deg,
+                max_branch_angle_deg,
+                hook_mm,
                 rng,
                 parent_centerline_xyz_mm=main_points,
                 parent_radii_mm=parent_radii,
@@ -391,6 +502,26 @@ def generate_case(
         daughter_mask = tube_distance_mask(shape_zyx, spacing_xyz_mm, daughter)
         image[daughter_mask] = daughter.intensity
 
+    distractor_list: list[Tube] = []
+    for _ in range(distractor_tubes):
+        for _attempt in range(100):
+            distractor = sample_distractor_tube(main_points, parent_radii, physical_size, rng)
+            parent_clearance = max(parent_radii) + distractor.radius_mm + 2.0
+            if centerline_distance(distractor.centerline_xyz_mm, main_points) <= parent_clearance:
+                continue
+            if any(
+                centerline_distance(distractor.centerline_xyz_mm, other.centerline_xyz_mm)
+                <= distractor.radius_mm + other.radius_mm + 1.0
+                for other in (*daughter_tubes, *distractor_list)
+            ):
+                continue
+            distractor_list.append(distractor)
+            break
+        else:
+            raise RuntimeError("Could not place disconnected distractor tubes")
+    for distractor in distractor_list:
+        image[tube_distance_mask(shape_zyx, spacing_xyz_mm, distractor)] = distractor.intensity
+
     case_id = f"subject{case_index:03d}"
     return {
         "case_id": case_id,
@@ -398,6 +529,11 @@ def generate_case(
             "seed": seed + case_index,
             "noise_std": round(float(noise_std), 4),
             "max_curvature_mm": round(float(curvature_mm), 4),
+            "branch_angle_deg": [round(float(min_branch_angle_deg), 4), round(float(max_branch_angle_deg), 4)],
+            "daughter_length_mm": [round(float(min_daughter_length_mm), 4), round(float(max_daughter_length_mm), 4)],
+            "hook_mm": round(float(hook_mm), 4),
+            "distractor_tubes": distractor_tubes,
+            "organ_blobs": organ_blobs,
         },
         "parent": {"instance_id": "aorta", "radius_mm": round(aorta_radius, 4)},
         "daughters": [
@@ -439,6 +575,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--min-daughters", type=int, default=1)
     parser.add_argument("--max-daughters", type=int, default=4)
     parser.add_argument("--curvature", type=float, default=5.0, help="Maximum daughter centerline bend in mm (default: 5)")
+    parser.add_argument("--min-branch-angle", type=float, default=35.0, help="Minimum daughter angle from the parent axis in degrees")
+    parser.add_argument("--max-branch-angle", type=float, default=75.0, help="Maximum daughter angle from the parent axis in degrees")
+    parser.add_argument("--min-daughter-length", type=float, default=35.0, help="Minimum daughter length in mm")
+    parser.add_argument("--max-daughter-length", type=float, default=70.0, help="Maximum daughter length in mm")
+    parser.add_argument("--hook", type=float, default=8.0, help="Terminal daughter hook size in mm")
+    parser.add_argument("--distractor-tubes", type=int, default=8, help="Disconnected bright tubes added to the CT only")
+    parser.add_argument("--organ-blobs", type=int, default=8, help="Solid organ/lesion blobs added to the CT only")
     parser.add_argument("--noise-std", type=float, default=8.0, help="Gaussian voxel noise standard deviation (default: 8)")
     parser.add_argument("--size", type=int, nargs=3, default=(160, 160, 256), metavar=("NX", "NY", "NZ"))
     parser.add_argument("--spacing", type=float, nargs=3, default=(0.8, 0.8, 1.0), metavar=("SX", "SY", "SZ"))
@@ -453,6 +596,12 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("--size values must be at least 1 and --spacing values must be positive")
     if args.curvature < 0 or args.noise_std < 0:
         raise SystemExit("--curvature and --noise-std must be nonnegative")
+    if not 0 < args.min_branch_angle <= args.max_branch_angle < 90:
+        raise SystemExit("Branch angles must satisfy 0 < min <= max < 90 degrees")
+    if args.min_daughter_length <= 5 or args.min_daughter_length > args.max_daughter_length:
+        raise SystemExit("Daughter lengths must satisfy 5 < min <= max mm")
+    if args.hook < 0 or args.distractor_tubes < 0 or args.organ_blobs < 0:
+        raise SystemExit("Hook size and object counts must be nonnegative")
     if args.size[2] * args.spacing[2] <= 60:
         raise SystemExit("The physical z extent must be greater than 60 mm")
 
@@ -467,6 +616,13 @@ def main(argv: list[str] | None = None) -> int:
             spacing_xyz_mm=tuple(args.spacing),
             curvature_mm=args.curvature,
             noise_std=args.noise_std,
+            min_branch_angle_deg=args.min_branch_angle,
+            max_branch_angle_deg=args.max_branch_angle,
+            min_daughter_length_mm=args.min_daughter_length,
+            max_daughter_length_mm=args.max_daughter_length,
+            hook_mm=args.hook,
+            distractor_tubes=args.distractor_tubes,
+            organ_blobs=args.organ_blobs,
         )
         write_case(case, output_dir)
         print(f"Wrote {case['case_id']} with {daughters} daughter(s)")

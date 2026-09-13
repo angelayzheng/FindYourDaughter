@@ -26,6 +26,12 @@ detector runs actually included in the current score.
 
 ## Reference scope
 
+The [25-case annotation workspace](annotation_workflow.md) prepares the remaining
+scans for review; it does **not** extend the labeled reference set. Unreviewed
+workspace cases have unknown daughters and are rejected by this scorer rather
+than treated as empty negative cases. The original five-case drafts below are
+preserved with their existing limitations.
+
 The supplied set contains cases 19-23, with **19 draft daughter instances** on
 1.5 mm native grids. Its own documentation says annotations need expert review
 and may omit eligible origins. Results measure agreement with this draft set,

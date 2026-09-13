@@ -109,7 +109,28 @@ seeds, radii, directions, and curved centerlines are recorded in the truth file.
 Use `--min-daughters`, `--max-daughters`, `--curvature`, `--noise-std`, `--size`,
 and `--spacing` to vary the test set while retaining physical-space vessel
 dimensions. Daughter branches use separated launch angles and are rejected if
-their centerlines would overlap.
+their centerlines would overlap. The CT also includes disconnected bright
+distractor tubes and varied solid organ/lesion blobs; neither is added to the
+parent mask or truth daughters.
+
+For a clean geometry control with straight, noiseless daughters:
+
+```powershell
+python scripts/generate_synthetic_cases.py --output tmp/synthetic-clean --cases 10 --seed 941 --curvature 0 --hook 0 --noise-std 0 --distractor-tubes 0 --organ-blobs 0
+```
+
+For an adversarial cohort intended to expose false positives and missed curved
+branches:
+
+```powershell
+python scripts/generate_synthetic_cases.py --output tmp/synthetic-stress --cases 20 --seed 8063 --min-daughters 0 --max-daughters 6 --min-branch-angle 25 --max-branch-angle 80 --min-daughter-length 40 --max-daughter-length 85 --curvature 12 --hook 14 --noise-std 18 --distractor-tubes 14 --organ-blobs 16
+```
+
+The main geometry controls are `--min-branch-angle` and `--max-branch-angle`
+(degrees from the parent centerline), `--min-daughter-length` and
+`--max-daughter-length` (millimetres), `--curvature` and `--hook` (millimetres),
+`--distractor-tubes`, `--organ-blobs`, and `--noise-std`. Generation is
+deterministic for a fixed `--seed`.
 
 ## Voxel-intensity histograms
 

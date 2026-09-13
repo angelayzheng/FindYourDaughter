@@ -41,6 +41,8 @@ def read_reference(directory: Path) -> ReferenceCase:
     number = int(match[1])
     annotation_path = directory / "annotations.json"
     annotation = json.loads(annotation_path.read_text(encoding="utf-8"))
+    if annotation.get("comparison_ready", True) is not True:
+        raise ValueError("Annotation workspace is not comparison-ready: unreviewed proposals are not reference labels")
     if annotation.get("case_id") != directory.name:
         raise ValueError("Annotation case_id does not match its directory")
     if annotation.get("coordinate_system") != "SimpleITK physical LPS millimetres":
