@@ -14,3 +14,4 @@ prediction.json
 tmp/
 papers/
 eval_set/
+annotation_workspaces/

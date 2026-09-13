@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CT annotation review</title>
+<style>
+body{margin:0;background:#0c141e;color:#edf3f7;font:15px system-ui}header,aside{padding:18px 24px}h1{margin:0 0 8px;font-size:24px}.notice{color:#ffd386;max-width:1100px;line-height:1.5}.tools{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:14px 0}button,select,input,textarea{font:inherit}button,select{padding:7px;background:#203548;color:#fff;border:1px solid #658095;border-radius:4px}button{cursor:pointer}textarea{width:95%;min-height:70px}.planes{display:flex;gap:14px;padding:0 24px;align-items:flex-start}.plane{flex:1;min-width:0;background:#141f2c;padding:12px;border-radius:6px}.plane canvas{width:100%;margin:0 auto;image-rendering:pixelated;display:block;background:#000}.plane input{width:100%}.muted{color:#adbdcb}#position{font-family:monospace;padding:8px 0}aside{display:grid;grid-template-columns:1fr 1fr;gap:24px}li{margin:6px 0}a{color:#99d9ff}@media(max-width:850px){.planes{display:block}.plane{margin:12px 0}aside{display:block}}
+</style>
+<header>
+<h1 id="title"></h1>
+<div class="notice">UNREVIEWED — not ground truth. Inspect the whole supplied aorta before revealing model hints. Unknown origins are not negative labels. This workspace cannot certify anatomy or export an approved scoring reference.</div>
+<div class="tools"><label><input id="parent" type="checkbox" checked> Parent mask</label><label><input id="hints" type="checkbox"> Show model hints</label><label>Window <input id="window" type="number" min="1" max="5000" step="50"></label><label>Level <input id="level" type="number" min="-1000" max="3000" step="25"></label><button id="save">Download review JSON</button><label>Resume review <input id="resume" type="file" accept=".json"></label></div>
+<div id="position"></div><div id="geometry" class="muted"></div>
+</header>
+<main class="planes">
+<section class="plane"><h2>Native XY</h2><canvas id="xy"></canvas><label>Slice k <input id="k" type="range"></label><span id="kv"></span></section>
+<section class="plane"><h2>Native XZ</h2><canvas id="xz"></canvas><label>Slice j <input id="j" type="range"></label><span id="jv"></span></section>
+<section class="plane"><h2>Native YZ</h2><canvas id="yz"></canvas><label>Slice i <input id="i" type="range"></label><span id="iv"></span></section>
+</main>
+<aside><section><h2>Review hints</h2><p class="muted">Cards can be duplicate observations of the same lumen. Agreement between models is not independent evidence of a correct label. Hints also omit origins missed by every detector.</p>
+<select id="proposal"><option value="">Select a proposal</option></select><select id="decision"><option>unreviewed</option><option>retain_for_review</option><option>exclude_from_draft</option><option>unresolved</option></select><p id="sources"></p><label>Proposal evidence / reason<textarea id="proposalNotes"></textarea></label>
+<h2>Manual tracing guides</h2><p>Click a plane to move the crosshair, then add points along visible lumen. Guides remain unverified and are saved separately from model proposals.</p><button id="newGuide">New guide</button> <button id="addPoint">Add crosshair point</button> <button id="undo">Undo last point</button><p id="guideInfo"></p></section>
+<section><h2>Case record</h2><p id="legacy"></p><p id="legacyLink"></p><label>Reviewer <input id="reviewer" type="text"></label><label> Date <input id="date" type="date"></label><p><label>Case notes and unresolved regions<textarea id="notes"></textarea></label></p><h3>Review requirements</h3><ol id="checklist"></ol><p class="muted">The 2 mm origin-diameter cutoff is provisional, inherited from the old drafts. The challenge PDF defers the final threshold. Windowing uses rounded 16-bit CT values in this preview; the NIfTI files retain full stored values. No anatomy, measurements, mask edits, or completeness have been verified by this viewer.</p></section></aside>
+<script id="data" type="application/json">__REVIEW_DATA__</script>
+<script>
+'use strict';
+const data=JSON.parse(document.getElementById('data').textContent), $=id=>document.getElementById(id);
+function bytes(s){const raw=atob(s),a=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)a[i]=raw.charCodeAt(i);return a;}
+const raw=bytes(data.ct_base64),ctView=new DataView(raw.buffer),ct=new Int16Array(raw.length/2),mask=bytes(data.parent_base64);
+for(let i=0;i<ct.length;i++)ct[i]=ctView.getInt16(i*2,true);
+delete data.ct_base64;delete data.parent_base64;
+const dims=data.crop_size_xyz, offset=data.crop_offset_xyz, spacing=data.spacing_xyz_mm,A=data.working_index_to_lps_mm;
+let pos=dims.map((n,a)=>Math.floor(n/2)+offset[a]),guide=null;
+const physical=p=>[0,1,2].map(a=>A[a][3]+p.reduce((s,v,k)=>s+A[a][k]*v,0));
+const indexOf=p=>[0,1,2].map(a=>data.working_lps_mm_to_index[a][3]+p.reduce((s,v,k)=>s+data.working_lps_mm_to_index[a][k]*v,0));
+const norm=p=>Math.hypot(...p),sub=(a,b)=>a.map((v,i)=>v-b[i]);
+$('title').textContent=data.subject_id+' / annotation review';
+$('window').value=Math.round(data.display_window);$('level').value=Math.round(data.display_level);
+$('legacy').textContent=data.existing_draft_instances===null?'No daughter reference annotations exist for this case.':data.existing_draft_instances+' existing draft labels; expert review is still pending.';
+if(data.existing_draft_instances!==null){const link=document.createElement('a');link.href='../existing_draft/'+data.case_id+'/review_preview.png';link.textContent='Open preserved draft preview';$('legacyLink').append(link);}
+$('geometry').textContent='Indices refer to the full working grid; coordinates are physical LPS mm. Spacing: '+spacing.map(v=>v.toFixed(3)).join(' × ')+' mm. '+(data.resampled_nonorthogonal_source?'This case was resampled from a nonorthogonal source; use the supplied working CT/mask together.':'Working grid retains the input geometry.')+' All three planes can be scrolled through the full parent region.';
+for(const line of data.checklist){const li=document.createElement('li');li.textContent=line;$('checklist').append(li);}
+for(const p of data.proposals){const op=document.createElement('option');op.value=p.proposal_id;op.textContent=p.proposal_id+' — '+p.sources.join(', ');$('proposal').append(op);}
+for(const [a,id] of ['i','j','k'].entries()){const input=$(id);input.min=offset[a];input.max=offset[a]+dims[a]-1;input.step=1;input.value=pos[a];input.oninput=()=>{pos[a]=Number(input.value);draw();};}
+function selected(){return data.proposals.find(p=>p.proposal_id===$('proposal').value);}
+function sync(){for(const [a,id]of ['i','j','k'].entries()){$(id).value=pos[a];$(id+'v').textContent=pos[a]+' / '+(data.shape_xyz[a]-1);} $('position').textContent='XYZ voxel: '+pos.join(', ')+' | LPS mm: '+physical(pos).map(v=>v.toFixed(2)).join(', ');}
+const planes=[['xy',0,1,2],['xz',0,2,1],['yz',1,2,0]];
+function draw(){sync();for(const [id,x,y,z]of planes){const canvas=$(id),ctx=canvas.getContext('2d');canvas.width=dims[x];canvas.height=dims[y];const ratio=dims[y]*spacing[y]/(dims[x]*spacing[x]),width=Math.min(canvas.parentElement.clientWidth-24,560/ratio);canvas.style.width=width+'px';canvas.style.height=(width*ratio)+'px';
+const out=ctx.createImageData(canvas.width,canvas.height),w=Math.max(1,Number($('window').value)||600),l=Number($('level').value)||0;
+for(let j=0;j<dims[y];j++)for(let i=0;i<dims[x];i++){let p=[...pos];p[x]=i+offset[x];p[y]=j+offset[y];const q=p.map((v,a)=>v-offset[a]),n=(q[2]*dims[1]+q[1])*dims[0]+q[0],n4=(j*dims[x]+i)*4,v=Math.max(0,Math.min(255,(ct[n]-l+w/2)*255/w));out.data[n4]=mask[n]&&$('parent').checked?Math.min(255,v*.65+90):v;out.data[n4+1]=mask[n]&&$('parent').checked?v*.65:v;out.data[n4+2]=mask[n]&&$('parent').checked?v*.65:v;out.data[n4+3]=255;}
+ctx.putImageData(out,0,0);ctx.strokeStyle='#75e1f0';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(pos[x]-offset[x]+.5,0);ctx.lineTo(pos[x]-offset[x]+.5,dims[y]);ctx.moveTo(0,pos[y]-offset[y]+.5);ctx.lineTo(dims[x],pos[y]-offset[y]+.5);ctx.stroke();
+if($('hints').checked){const p=selected();if(p)for(const [key,color]of [['ostium_xyz_mm','#ffff40'],['seed_xyz_mm','#50ff98']]){const point=indexOf(p.geometry[key]);if(Math.abs(point[z]-pos[z])*spacing[z]<=2){ctx.strokeStyle=color;ctx.lineWidth=1;ctx.beginPath();ctx.arc(point[x]-offset[x],point[y]-offset[y],3,0,2*Math.PI);ctx.stroke();}}}
+if(guide){ctx.fillStyle='#f4a5ff';for(const p of guide.points_voxel_xyz)if(Math.abs(p[z]-pos[z])*spacing[z]<=spacing[z]/2)ctx.fillRect(p[x]-offset[x]-1,p[y]-offset[y]-1,2,2);}}
+if(guide){let length=0;for(let i=1;i<guide.points_lps_mm.length;i++)length+=norm(sub(guide.points_lps_mm[i],guide.points_lps_mm[i-1]));$('guideInfo').textContent=guide.guide_id+': '+guide.points_lps_mm.length+' points, '+length.toFixed(2)+' mm guide length; not an eligibility verification.';}}
+for(const [id,x,y,z]of planes)$(id).onclick=event=>{const rect=event.target.getBoundingClientRect();pos[x]=Math.max(offset[x],Math.min(offset[x]+dims[x]-1,Math.floor((event.clientX-rect.left)*dims[x]/rect.width)+offset[x]));pos[y]=Math.max(offset[y],Math.min(offset[y]+dims[y]-1,Math.floor((event.clientY-rect.top)*dims[y]/rect.height)+offset[y]));draw();};
+for(const id of ['window','level','parent','hints'])$(id).oninput=draw;
+$('proposal').onchange=()=>{const p=selected();if(!p)return;$('hints').checked=true;pos=indexOf(p.geometry.ostium_xyz_mm).map((v,a)=>Math.max(offset[a],Math.min(offset[a]+dims[a]-1,Math.round(v))));$('sources').textContent='Model sources: '+p.sources.join(', ')+'; proposed radius '+p.geometry.radius_mm.toFixed(2)+' mm, unverified.';$('decision').value=p.decision;$('proposalNotes').value=p.review_notes;draw();};
+$('decision').onchange=()=>{const p=selected();if(p)p.decision=$('decision').value;};
+$('proposalNotes').oninput=()=>{const p=selected();if(p)p.review_notes=$('proposalNotes').value;};
+$('newGuide').onclick=()=>{guide={guide_id:'manual_'+String(data.manual_guides.length+1).padStart(3,'0'),status:'unreviewed',points_voxel_xyz:[],points_lps_mm:[]};data.manual_guides.push(guide);draw();};
+$('addPoint').onclick=()=>{if(!guide){alert('Start a new guide first.');return;}guide.points_voxel_xyz.push([...pos]);guide.points_lps_mm.push(physical(pos));draw();};
+$('undo').onclick=()=>{if(guide){guide.points_voxel_xyz.pop();guide.points_lps_mm.pop();draw();}};
+$('save').onclick=()=>{data.reviewer=$('reviewer').value||null;data.review_date=$('date').value||null;data.notes=[$('notes').value];data.annotation_status='unreviewed';data.comparison_ready=false;data.daughters=null;const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)+'\n'],{type:'application/json'}));a.href=url;a.download=data.case_id+'_review.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+function restore(value){
+if(value.case_id!==data.case_id||JSON.stringify(value.source_sha256)!==JSON.stringify(data.source_sha256)||JSON.stringify(value.working_index_to_lps_mm)!==JSON.stringify(A)||JSON.stringify(value.hint_runs)!==JSON.stringify(data.hint_runs))throw Error('Case, input hashes, grid or model-hint versions do not match this workspace.');
+if(!Array.isArray(value.manual_guides)||!Array.isArray(value.proposals)||value.proposals.length!==data.proposals.length)throw Error('Invalid guide/proposal inventory.');
+for(const g of value.manual_guides){if(!Array.isArray(g.points_voxel_xyz)||!Array.isArray(g.points_lps_mm)||g.points_voxel_xyz.length!==g.points_lps_mm.length)throw Error('Invalid guide coordinates.');for(let i=0;i<g.points_voxel_xyz.length;i++){const p=g.points_voxel_xyz[i],q=g.points_lps_mm[i];if(!Array.isArray(p)||!Array.isArray(q)||p.length!==3||q.length!==3||!p.every((v,a)=>Number.isFinite(v)&&v>=0&&v<data.shape_xyz[a])||!q.every(Number.isFinite)||norm(sub(physical(p),q))>1e-5)throw Error('Guide voxel and physical coordinates disagree.');}}
+for(const p of data.proposals){const old=value.proposals.find(q=>q.proposal_id===p.proposal_id);if(!old||JSON.stringify(old.geometry)!==JSON.stringify(p.geometry)||!['unreviewed','retain_for_review','exclude_from_draft','unresolved'].includes(old.decision))throw Error('Proposal identity or decision is invalid.');}
+data.manual_guides=value.manual_guides;data.notes=Array.isArray(value.notes)?value.notes.map(String):[];for(const p of data.proposals){const old=value.proposals.find(q=>q.proposal_id===p.proposal_id);p.decision=old.decision;p.review_notes=String(old.review_notes||'');}
+$('reviewer').value=value.reviewer||'';$('date').value=value.review_date||'';$('notes').value=data.notes.join('\n');guide=data.manual_guides.at(-1)||null;$('proposal').value='';draw();
+}
+$('resume').onchange=async()=>{try{restore(JSON.parse(await $('resume').files[0].text()));}catch(e){alert(e.message);}};
+window.onresize=draw;
+draw();
+</script>
+</html>
