@@ -36,7 +36,6 @@ class PipelineSmokeTest(unittest.TestCase):
                     str(output_path),
                 ]
             )
-
             self.assertEqual(result, 0)
             self.assertEqual(
                 json.loads(output_path.read_text(encoding="utf-8")),
@@ -46,6 +45,22 @@ class PipelineSmokeTest(unittest.TestCase):
                     "daughters": [],
                 },
             )
+
+    def test_subject_mode_discovers_gzipped_image_and_mask(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "subject042"
+            root.mkdir()
+            image = sitk.Image([4, 5, 6], sitk.sitkInt16)
+            image.SetSpacing((0.7, 0.7, 1.2))
+            sitk.WriteImage(image, str(root / "orig42.nii.gz"))
+            sitk.WriteImage(sitk.Image(image), str(root / "mask42.nii.gz"))
+            output_path = root / "prediction.json"
+
+            self.assertEqual(main(["--subject", str(root), "--output", str(output_path)]), 0)
+            result = json.loads(output_path.read_text(encoding="utf-8"))
+            self.assertEqual(result["case_id"], "subject042")
+            self.assertEqual(result["parent"], {"instance_id": "aorta"})
+            self.assertIsInstance(result["daughters"], list)
 
 
 if __name__ == "__main__":
