@@ -1,9 +1,9 @@
-"""Explicit algorithm selection. The original baseline remains the default."""
+"""Explicit algorithm selection. Refined is the default detector."""
 
 DETECTOR_NAMES = ("baseline", "contact", "fusion", "refined")
 
 
-def detect(image, aorta_mask, *, detector: str = "baseline", parameters: dict | None = None):
+def detect(image, aorta_mask, *, detector: str = "refined", parameters: dict | None = None):
     """Run one independent detector using its default settings."""
     from backend.configuration import configuration, option_types
     resolved = configuration(detector, parameters)

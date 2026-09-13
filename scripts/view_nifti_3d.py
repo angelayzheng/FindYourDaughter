@@ -21,7 +21,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--detect", action="store_true",
                         help="Run the experimental detector and overlay branches on its working grid")
     parser.add_argument("--detector", choices=DETECTOR_NAMES,
-                        help="Algorithm to overlay (requires --detect; default: baseline)")
+                        help="Algorithm to overlay (requires --detect; default: refined)")
     parser.add_argument("--config", type=Path, help="Saved detector configuration (requires --detect)")
     parser.add_argument("--branch", type=int,
                         help="Initially focus this candidate number (1-based; requires --detect)")
@@ -101,7 +101,7 @@ def main(argv: list[str] | None = None) -> None:
     try:
         if args.detect:
             from backend.configuration import configuration, load_configuration
-            config = load_configuration(args.config, detector=args.detector) if args.config else configuration(args.detector or "baseline")
+            config = load_configuration(args.config, detector=args.detector) if args.config else configuration(args.detector or "refined")
         options = VolumeViewOptions(
             frame=args.frame,
             max_dimension=args.max_dimension,

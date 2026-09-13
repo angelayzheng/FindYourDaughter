@@ -22,7 +22,7 @@ from frontend.browser_scene import scene_html, scene_payload
 from frontend.cases import find_subjects, mask_choices
 from frontend.point_cloud import render_projection
 from frontend.render import VTKRenderSession, VTKUnavailable, render_3d
-from frontend.results import discover_csv_files, read_csv_file
+from frontend.results import comparison_csv, discover_csv_files, read_csv_file, synthetic_comparison_rows
 
 
 @st.cache_resource(show_spinner=False)
@@ -214,6 +214,68 @@ with st.sidebar:
 
 if panel == "Benchmark Results":
     st.title("Benchmark Results")
+    st.subheader("Synthetic evaluation")
+    synthetic_root = Path(
+        st.text_input(
+            "Synthetic dataset folder",
+            str(ROOT / "synthetic_dataset"),
+            help="Folder containing subject*/orig*.nii, mask*.nii, and truth*.json.",
+        )
+    ).expanduser()
+    synthetic_detector = st.selectbox("Synthetic detector", DETECTOR_NAMES, key="synthetic_detector")
+    synthetic_tolerance = st.number_input(
+        "Ostium matching tolerance (mm)", min_value=0.1, value=3.0, step=0.5, key="synthetic_tolerance"
+    )
+    if st.button("Run synthetic evaluation", type="primary"):
+        try:
+            from scripts.evaluate_synthetic_detection import evaluate
+
+            with st.spinner("Running detector against synthetic truth…"):
+                st.session_state["synthetic_report"] = evaluate(
+                    synthetic_root, synthetic_tolerance, detector=synthetic_detector
+                )
+            st.session_state["synthetic_report_error"] = None
+        except (OSError, ValueError, RuntimeError) as error:
+            st.session_state["synthetic_report"] = None
+            st.session_state["synthetic_report_error"] = str(error)
+    if st.session_state.get("synthetic_report_error"):
+        st.error(st.session_state["synthetic_report_error"])
+    report = st.session_state.get("synthetic_report")
+    if report:
+        metrics = st.columns(5)
+        for column, label, value in zip(
+            metrics,
+            ("True positives", "False positives", "Missed truth", "Ostium error", "Seed error"),
+            (
+                report["true_positive"],
+                report["false_positive"],
+                report["false_negative"],
+                f"{report['mean_errors'].get('ostium_mm', 0):.2f} mm",
+                f"{report['mean_errors'].get('seed_mm', 0):.2f} mm",
+            ),
+        ):
+            column.metric(label, value)
+        comparison = synthetic_comparison_rows(report)
+        st.caption("True-vs-guess rows use the scorer's one-to-one ostium matching.")
+        st.dataframe(comparison, hide_index=True, width="stretch")
+        st.download_button(
+            "Download true-vs-guess CSV",
+            comparison_csv(comparison),
+            file_name=f"{synthetic_detector}_synthetic_comparison.csv",
+            mime="text/csv",
+            on_click="ignore",
+        )
+        with st.expander("Per-case totals", expanded=False):
+            st.dataframe(
+                [
+                    {key: case[key] for key in ("case_id", "truth", "predictions", "matched")}
+                    for case in report["cases"]
+                ],
+                hide_index=True,
+                width="stretch",
+            )
+    st.divider()
+    st.subheader("Saved CSV files")
     results_root = Path(
         st.text_input("Results folder", str(ROOT), help="Recursively search for CSV benchmark outputs.")
     ).expanduser()
@@ -261,7 +323,8 @@ with st.sidebar:
         detector = st.selectbox(
             "Algorithm",
             DETECTOR_NAMES,
-            help="Baseline is the default evaluator algorithm. Contact is an alternate experimental method.",
+            index=DETECTOR_NAMES.index("refined"),
+            help="Refined is the default evaluator algorithm. Baseline and Contact remain available for comparison.",
         )
         if not can_detect:
             st.caption("Select a 3-D CT and its aorta mask to run detection.")

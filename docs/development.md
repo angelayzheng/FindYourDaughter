@@ -189,7 +189,7 @@ python -m streamlit run frontend/app.py
 The dashboard lists NIfTI scans in the chosen dataset folder and its immediate
 subject subfolders. Select a subject, CT file, and optional neighboring aorta
 mask in **Case files**. With a 3-D CT and mask, **Branch detection** runs the selected
-experimental algorithm (baseline by default) once per input revision and caches
+experimental algorithm (refined by default) once per input revision and caches
 its evaluator-format results. Choose an instance to emphasize or hide the branch
 overlay. The main panel has **Simple View**, **Detailed View**, and **Results**
 choices. Only the selected view runs, so opening Results does not start a VTK
@@ -203,6 +203,10 @@ The **Benchmark Results** panel is independent of scan selection. Set its
 results folder (the repository root by default) and choose any recursively
 discovered CSV, such as timing, synthetic-evaluation, or review output. The
 selected table can also be downloaded unchanged from the dashboard.
+It can also run `scripts/evaluate_synthetic_detection.py` directly when pointed
+at a generated synthetic dataset, showing aggregate true/false positives and
+misses plus a downloadable true-vs-guess table for every matched or unmatched
+daughter.
 
 The dashboard is titled **Find Your Daughter** and uses a dark, flat rose
 palette with light text. A compact project logo appears above the sidebar controls.

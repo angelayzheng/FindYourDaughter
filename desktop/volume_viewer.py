@@ -145,8 +145,8 @@ class VolumeViewer:
 
             self.detection_overlay = DetectionOverlay(self, detection)
             self.default_screenshot = Path("nifti_previews") / f"{case.case_id}_detection_3d.png"
-            if detection.diagnostics.get("detector", "baseline") != "baseline":
-                method = detection.diagnostics["detector"]
+            method = detection.diagnostics.get("detector", "refined")
+            if method != "baseline":
                 self.default_screenshot = Path("nifti_previews") / f"{case.case_id}_{method}_detection_3d.png"
             self.volume.SetVisibility(False)
             self.outline_actor.SetVisibility(False)
