@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 import time
 
 import numpy as np
@@ -14,6 +14,25 @@ from backend.candidates import Candidate, group_candidates
 from backend.contact_detection import ContactOptions, detect_contacts
 from backend.detection import DetectedBranch, DetectionOptions, DetectionResult, _point_at, _vesselness, detect_daughters
 from backend.fusion_detection import FusionOptions, _EvidenceVolume
+
+
+@dataclass(frozen=True)
+class RefinedOptions:
+    """Optional refinement settings; defaults reproduce refined v1."""
+
+    max_initial_chord_voxel_diagonals: float = 2.
+    max_origin_shift_voxel_diagonals: float = 1.
+    minimum_closed_sections: int = 1
+    minimum_natural_sections: int = 0
+
+    def __post_init__(self):
+        if not np.isfinite(tuple(vars(self).values())).all():
+            raise ValueError("Refined settings must be finite")
+        if not 0 < self.max_origin_shift_voxel_diagonals <= self.max_initial_chord_voxel_diagonals:
+            raise ValueError("Require 0 < origin shift <= initial chord in voxel diagonals")
+        if (type(self.minimum_closed_sections) is not int or not 1 <= self.minimum_closed_sections <= 3
+                or type(self.minimum_natural_sections) is not int or not 0 <= self.minimum_natural_sections <= 3):
+            raise ValueError("Require 1-3 closed sections and 0-3 naturally closed sections")
 
 
 def _extended_caps(volume: _EvidenceVolume) -> list[tuple]:
@@ -30,7 +49,8 @@ def _extended_caps(volume: _EvidenceVolume) -> list[tuple]:
     return caps
 
 
-def _repair_parent_chord(path: np.ndarray, volume: _EvidenceVolume) -> tuple[np.ndarray | None, str]:
+def _repair_parent_chord(path: np.ndarray, volume: _EvidenceVolume,
+                         options: RefinedOptions | None = None) -> tuple[np.ndarray | None, str]:
     """Reanchor only an initially parent-crossing chord at its observed exit.
 
     A patch point on a concave wall can be unrelated to the skeleton root it
@@ -38,8 +58,9 @@ def _repair_parent_chord(path: np.ndarray, volume: _EvidenceVolume) -> tuple[np.
     the existing external path. Long jumps, later parent returns, and paths
     with less than five millimetres left are not rescued.
     """
+    options = options or RefinedOptions()
     chord = float(np.linalg.norm(path[1] - path[0]))
-    if chord > 2 * np.linalg.norm(volume.spacing):
+    if chord > options.max_initial_chord_voxel_diagonals * np.linalg.norm(volume.spacing):
         return None, "long_initial_chord"
     fractions = np.linspace(0, 1, max(3, int(np.ceil(chord / .25)) + 1))
     samples = path[0] + fractions[:, None] * (path[1] - path[0])
@@ -57,7 +78,7 @@ def _repair_parent_chord(path: np.ndarray, volume: _EvidenceVolume) -> tuple[np.
         else:
             right = middle
     origin = (left + right) / 2
-    if np.linalg.norm(origin - path[0]) > np.linalg.norm(volume.spacing):
+    if np.linalg.norm(origin - path[0]) > options.max_origin_shift_voxel_diagonals * np.linalg.norm(volume.spacing):
         return None, "large_origin_shift"
     repaired = np.vstack([origin, path[1:]])
     length = float(np.linalg.norm(np.diff(repaired, axis=0), axis=1).sum())
@@ -82,18 +103,23 @@ def _selection_key(candidate: Candidate) -> tuple:
             features["review_score"], candidate.source == "contact", candidate.candidate_id)
 
 
-def detect_refined(image: sitk.Image, aorta_mask: sitk.Image) -> DetectionResult:
+def detect_refined(image: sitk.Image, aorta_mask: sitk.Image, options: RefinedOptions | None = None, *,
+                   fusion_options: FusionOptions | None = None,
+                   baseline_options: DetectionOptions | None = None,
+                   contact_options: ContactOptions | None = None) -> DetectionResult:
     """Refine source evidence with no reference labels or learned parameters."""
     started = time.perf_counter()
-    options = FusionOptions()
-    contact = detect_contacts(image, aorta_mask)
-    baseline = detect_daughters(image, aorta_mask)
+    options = options or RefinedOptions()
+    fusion_options = fusion_options or FusionOptions()
+    contact = detect_contacts(image, aorta_mask, contact_options) if contact_options is not None else detect_contacts(image, aorta_mask)
+    baseline = detect_daughters(image, aorta_mask, baseline_options) if baseline_options is not None else detect_daughters(image, aorta_mask)
     candidates = [Candidate(f"{name}_{i:03d}", name, deepcopy(branch))
                   for name, source in (("baseline", baseline), ("contact", contact))
                   for i, branch in enumerate(source.branches, 1)]
     diagnostics = {
-        "method": "experimental_refined_v1", "options": asdict(options),
-        "source_options": {"baseline": asdict(DetectionOptions()), "contact": asdict(ContactOptions())},
+        "method": "experimental_refined_v1", "options": asdict(fusion_options), "refined_options": asdict(options),
+        "source_options": {"baseline": asdict(baseline_options or DetectionOptions()),
+                           "contact": asdict(contact_options or ContactOptions())},
         "source_counts": {"baseline": len(baseline.branches), "contact": len(contact.branches)},
         "source_rejections": {"baseline": baseline.diagnostics.get("rejected", {}),
                               "contact": contact.diagnostics.get("rejected", {})},
@@ -112,7 +138,7 @@ def detect_refined(image: sitk.Image, aorta_mask: sitk.Image) -> DetectionResult
         for number, record in enumerate(diagnostics["source_contact_records"], 1):
             if record["status"] != "unsupported_path":
                 continue
-            path, reason = _repair_parent_chord(np.asarray(record["centerline_xyz_mm"]), volume)
+            path, reason = _repair_parent_chord(np.asarray(record["centerline_xyz_mm"]), volume, options)
             audit = {"contact_record": number, "original_ostium_xyz_mm": record["ostium_xyz_mm"],
                      "status": reason}
             diagnostics["repairs"].append(audit)
@@ -125,7 +151,7 @@ def detect_refined(image: sitk.Image, aorta_mask: sitk.Image) -> DetectionResult
                                         contact.diagnostics["background_intensity"])
             samples = np.asarray([_point_at(path, d) for d in np.arange(2, 5.01, .5)])
             score = float(volume.sample(vesselness, samples).mean())
-            if not np.isfinite(score) or score < ContactOptions().min_vesselness:
+            if not np.isfinite(score) or score < (contact_options or ContactOptions()).min_vesselness:
                 audit["status"] = "weak_repaired_tubularity"
                 continue
             seed = _point_at(path, 5)
@@ -145,18 +171,22 @@ def detect_refined(image: sitk.Image, aorta_mask: sitk.Image) -> DetectionResult
             audit["candidate_id"] = c.candidate_id
             audit["repaired_ostium_xyz_mm"] = path[0].tolist()
         for c in candidates:
-            volume.measure(c, options)
+            volume.measure(c, fusion_options)
             sections = c.features.get("sections", [])
             if sections and not any(s["closed"] for s in sections):
                 c.reasons.append("no_closed_lumen_sections")
+            elif sections and sum(s["closed"] for s in sections) < options.minimum_closed_sections:
+                c.reasons.append("insufficient_closed_sections")
+            if sections and sum(s["closed"] and s["method"] == "orthogonal_section" for s in sections) < options.minimum_natural_sections:
+                c.reasons.append("insufficient_natural_sections")
             if c.features.get("origin_method") == "repaired_parent_chord":
                 seed_section = next((s for s in sections if s["arc_length_mm"] == 5), None)
                 if seed_section is None or not seed_section["closed"]:
                     c.reasons.append("unmeasured_repaired_seed")
             if c.reasons:
                 c.status = "rejected"
-        groups = group_candidates(candidates, ostium_mm=options.duplicate_ostium_mm,
-                                  path_mm=options.duplicate_path_mm)
+        groups = group_candidates(candidates, ostium_mm=fusion_options.duplicate_ostium_mm,
+                                  path_mm=fusion_options.duplicate_path_mm)
         selected = []
         for group in groups:
             eligible = [c for c in group if c.status == "eligible"]

@@ -16,6 +16,7 @@ import numpy as np
 import SimpleITK as sitk
 
 from backend.detectors import DETECTOR_NAMES, detect
+from backend.configuration import configuration
 from backend.inputs import CaseData, _same_geometry, load_case
 from evaluation.landmarks import score_landmarks, summarize, usable_radius, validate_branches
 
@@ -103,7 +104,7 @@ def _write_json(path: Path, value: dict) -> None:
 def _markdown(report: dict) -> str:
     lines = ["# Draft reference evaluation", "", SCOPE, "",
              f"Status: **{report['status']}**. Ostium matching tolerance: **{report['matching_tolerance_mm']:g} mm**.",
-             "Detectors use registry defaults; only CT and the parent mask are passed to detection.", "",
+             "Effective parameters are recorded in report.json; only CT, the parent mask, and those parameters enter detection.", "",
              "| Detector | Completed cases | Matches / references | Unmatched predictions | Reference precision | Reference recall |",
              "| --- | ---: | ---: | ---: | ---: | ---: |"]
 
@@ -134,7 +135,8 @@ def _markdown(report: dict) -> str:
 
 
 def evaluate_dataset(dataset: Path, output: Path, *, detectors: tuple[str, ...] = DETECTOR_NAMES,
-                     tolerance_mm: float = 3., cases: list[int] | None = None) -> dict:
+                     tolerance_mm: float = 3., cases: list[int] | None = None,
+                     parameters: dict | None = None) -> dict:
     """Run cases serially, record failures, and save a reviewable paired report."""
     dataset, output = Path(dataset).resolve(), Path(output).resolve()
     if output.is_relative_to(dataset):
@@ -143,6 +145,9 @@ def evaluate_dataset(dataset: Path, output: Path, *, detectors: tuple[str, ...] 
         raise ValueError("Matching tolerance must be finite and positive")
     if not detectors or len(set(detectors)) != len(detectors) or any(d not in DETECTOR_NAMES for d in detectors):
         raise ValueError(f"Select unique registered detectors from {DETECTOR_NAMES}")
+    if parameters is not None and (not isinstance(parameters, dict) or set(parameters) - set(detectors)):
+        raise ValueError("Parameters must be keyed by selected detector names")
+    configurations = {name: configuration(name, (parameters or {}).get(name)) for name in detectors}
     directories = sorted((p for p in dataset.glob("case_*") if p.is_dir()), key=lambda p: p.name)
     if not directories:
         raise ValueError(f"No case_NUMBER directories found in {dataset}")
@@ -165,7 +170,8 @@ def evaluate_dataset(dataset: Path, output: Path, *, detectors: tuple[str, ...] 
         "dataset": str(dataset), "annotation_status": manifest.get("annotation_status", "unspecified"),
         "manifest_sha256": _sha256(manifest_path) if manifest_path.exists() else None,
         "matching_tolerance_mm": tolerance_mm, "matching": "one-to-one maximum cardinality then minimum LPS ostium distance",
-        "detectors": list(detectors), "detector_settings": "unchanged registry defaults",
+        "detectors": list(detectors), "detector_settings": "explicit parameters" if parameters else "unchanged registry defaults",
+        "configurations": configurations,
         "python": platform.python_version(),
         "versions": {name: version(name) for name in ("numpy", "scipy", "SimpleITK", "scikit-image", "nibabel")},
         "backend_sha256": {p.name: _sha256(p) for p in sorted(backend_dir.glob("*.py"))},
@@ -195,7 +201,8 @@ def evaluate_dataset(dataset: Path, output: Path, *, detectors: tuple[str, ...] 
                 start = time.perf_counter()
                 # Reference labels, guides, per-case thresholds and landmarks
                 # are intentionally not detector inputs or parameter settings.
-                result = detect(reference.case.image, reference.case.aorta_mask, detector=name)
+                settings = {"parameters": configurations[name]["parameters"]} if parameters is not None else {}
+                result = detect(reference.case.image, reference.case.aorta_mask, detector=name, **settings)
                 elapsed = time.perf_counter() - start
                 prediction = {"case_id": directory.name, "parent": {"instance_id": "aorta"},
                               "daughters": result.daughters()}

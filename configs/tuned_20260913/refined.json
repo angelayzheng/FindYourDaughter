@@ -1,0 +1,36 @@
+{
+  "detector": "refined",
+  "parameters": {
+    "baseline": {
+      "margin_mm": 15.0,
+      "intensity_fraction": 0.55,
+      "min_radius_mm": 0.8,
+      "max_radius_mm": 6.0,
+      "min_vesselness": 0.1
+    },
+    "contact": {
+      "margin_mm": 15.0,
+      "growth_mm": 12.0,
+      "intensity_fraction": 0.3,
+      "support_band_mm": 2.0,
+      "tube_seed": 0.15,
+      "tube_reach_mm": 2.0,
+      "min_vesselness": 0.15,
+      "min_radius_mm": 0.8,
+      "max_radius_mm": 6.0
+    },
+    "fusion": {
+      "duplicate_ostium_mm": 2.5,
+      "duplicate_path_mm": 1.5,
+      "minimum_support_fraction": 0.8,
+      "max_radius_cv": 0.35,
+      "max_expansion_ratio": 2.0
+    },
+    "refined": {
+      "max_initial_chord_voxel_diagonals": 2.0,
+      "max_origin_shift_voxel_diagonals": 1.0,
+      "minimum_closed_sections": 1,
+      "minimum_natural_sections": 0
+    }
+  }
+}

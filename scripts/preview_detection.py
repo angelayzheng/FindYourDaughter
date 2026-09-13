@@ -100,14 +100,20 @@ def main() -> int:
     parser.add_argument("--image", type=Path, required=True)
     parser.add_argument("--aorta-mask", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, help="Default: nifti_previews/detection, with a subfolder for alternative detectors")
-    parser.add_argument("--detector", choices=DETECTOR_NAMES, default="baseline")
+    parser.add_argument("--detector", choices=DETECTOR_NAMES)
+    parser.add_argument("--config", type=Path, help="Saved detector configuration")
     args = parser.parse_args()
+    from backend.configuration import configuration, load_configuration
+    try:
+        config = load_configuration(args.config, detector=args.detector) if args.config else configuration(args.detector or "baseline")
+    except (ValueError, OSError) as error:
+        parser.error(str(error))
     if args.output_dir is None:
         args.output_dir = Path("nifti_previews/detection")
-        if args.detector != "baseline":
-            args.output_dir /= args.detector
+        if config["detector"] != "baseline":
+            args.output_dir /= config["detector"]
     case = load_case(args.image, args.aorta_mask)
-    result = detect(case.image, case.aorta_mask, detector=args.detector)
+    result = detect(case.image, case.aorta_mask, detector=config["detector"], parameters=config["parameters"])
     args.output_dir.mkdir(parents=True, exist_ok=True)
     case_id = _case_id(args.image)
     prediction = {"case_id": case_id, "parent": {"instance_id": "aorta"}, "daughters": result.daughters()}

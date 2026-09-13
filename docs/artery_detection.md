@@ -14,6 +14,9 @@ synthetic scorer. The baseline described below remains unchanged and is the
 default. See that guide for the current side-by-side comparison and tradeoffs.
 An additional [fusion variant](fusion_detection.md) combines source observations
 with shared diagnostics and duplicate grouping; select `--detector fusion`.
+The separate [refined detector](refined_detection.md) adds bounded geometric
+checks. All four detectors accept saved [parameter configurations](parameter_tuning.md)
+through `--config` in `run.py`, the native viewer, static previews, and scorers.
 
 ## Run and inspect
 

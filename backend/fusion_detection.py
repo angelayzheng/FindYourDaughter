@@ -166,19 +166,22 @@ class _EvidenceVolume:
         candidate.status = "rejected" if candidate.reasons else "eligible"
 
 
-def detect_fusion(image: sitk.Image, aorta_mask: sitk.Image, options: FusionOptions | None = None) -> DetectionResult:
+def detect_fusion(image: sitk.Image, aorta_mask: sitk.Image, options: FusionOptions | None = None, *,
+                  baseline_options: DetectionOptions | None = None,
+                  contact_options: ContactOptions | None = None) -> DetectionResult:
     """Fuse observed proposals; reference annotations are never inputs."""
     started = time.perf_counter()
     options = options or FusionOptions()
     # Contact validates scalar geometry, binary masks and finite ROI intensities.
-    contact = detect_contacts(image, aorta_mask)
-    baseline = detect_daughters(image, aorta_mask)
+    contact = detect_contacts(image, aorta_mask, contact_options) if contact_options is not None else detect_contacts(image, aorta_mask)
+    baseline = detect_daughters(image, aorta_mask, baseline_options) if baseline_options is not None else detect_daughters(image, aorta_mask)
     sources = {"baseline": baseline, "contact": contact}
     candidates = [Candidate(f"{name}_{i:03d}", name, deepcopy(branch))
                   for name, result in sources.items() for i, branch in enumerate(result.branches, 1)]
     result = DetectionResult(diagnostics={
         "method": "experimental_fusion_v1", "options": asdict(options), "rejected": {},
-        "source_options": {"baseline": asdict(DetectionOptions()), "contact": asdict(ContactOptions())},
+        "source_options": {"baseline": asdict(baseline_options or DetectionOptions()),
+                           "contact": asdict(contact_options or ContactOptions())},
         "source_counts": {name: len(source.branches) for name, source in sources.items()},
         "source_rejections": {name: source.diagnostics.get("rejected", {}) for name, source in sources.items()},
         "blood_intensity": contact.diagnostics.get("blood_intensity"),

@@ -8,7 +8,7 @@ python scripts/evaluate_detectors.py
 
 This reads `eval_set/case_*/` and writes `nifti_previews/evaluation/report.json`,
 `summary.md`, and separate prediction/diagnostic JSON files under `baseline/`,
-`contact/`, `fusion/`, and `refined/`. The runner performs no training or parameter tuning;
+`contact/`, `fusion/`, and `refined/`. This evaluation command performs no training or parameter search;
 no new dependencies or network access are involved. The reference files are read only, and output inside the
 reference dataset is rejected. The required `run.py` command is unchanged.
 
@@ -86,7 +86,7 @@ benchmark or an official runtime measurement.
 All four detectors, including the experimental [refined detector](refined_detection.md),
 were evaluated on 2026-09-13 with default settings, the supplied five-case draft
 set, and a 3 mm tolerance. Baseline, contact, and fusion predictions are identical
-to their saved results before refinement; their implementations and the default
+to their saved results before refinement; their default detection behavior and the default
 selection remain unchanged. `refined` is a separate opt-in algorithm.
 The command was:
 
@@ -94,7 +94,7 @@ The command was:
 python scripts/evaluate_detectors.py --detector all --output-dir nifti_previews/improvement_refined
 ```
 
-The local `nifti_previews/improvement_refined/report.json` records full metrics,
+The local `nifti_previews/improvement_refined/report.json` records these historical metrics,
 input and implementation hashes, and dependency versions. Generated reports and
 predictions remain ignored by version control.
 
@@ -134,6 +134,68 @@ predictions are in case 21. All detectors completed all five cases without failu
 The draft cases informed these changes and are development data, not a holdout.
 See the [specific failure analysis and synthetic validation](refined_detection.md).
 
+## Parameter tuning results (2026-09-13)
+
+The original table above is retained. A separate search evaluated **114
+configurations** across all five cases, ranked by balanced **F1** at the same
+3 mm tolerance. All 570 case/configuration evaluations completed successfully.
+The best three settings per detector and its default then ran on synthetic
+development data (10 cases, 30 daughters). Selection requires synthetic F1 and
+recall at least as good as that detector's default.
+
+| Detector | Original F1 | Selected matches / 19 | Selected extras | Selected precision | Selected recall | Selected F1 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 37.0% | 8 | 6 | 57.1% | 42.1% | 48.5% |
+| Contact | 57.1% | 9 | 1 | 90.0% | 47.4% | 62.1% |
+| Fusion | 57.9% | 12 | 7 | 63.2% | 63.2% | 63.2% |
+| Refined | 72.2% | 14 | 3 | 82.4% | 73.7% | **77.8%** |
+
+| Saved configuration | Changes from that detector's original defaults |
+| --- | --- |
+| [Baseline](../configs/tuned_20260913/baseline.json) | `baseline.intensity_fraction=0.45` |
+| [Contact](../configs/tuned_20260913/contact.json) | `contact.intensity_fraction=0.45` |
+| [Fusion](../configs/tuned_20260913/fusion.json) | `contact.intensity_fraction=0.30`, `contact.min_vesselness=0.15` |
+| [Refined](../configs/tuned_20260913/refined.json) | `contact.intensity_fraction=0.30`, `contact.min_vesselness=0.15` |
+
+Refined is the strongest selected configuration in this search. It recovers
+case 19 / `branch_001`, keeps every previously matched reference, and reduces
+case 21 extras from four to three. Its per-case matches / predictions are
+**2/2, 2/2, 3/6, 6/6, 1/1** for cases 19 through 23. Lowering the brightness
+threshold from 256.55 to 232.90 HU recovers the weak path in case 19;
+requiring stronger tube evidence
+limits extras. Five references remain missed, chiefly involving absent or
+displaced contact proposals and short paths ending at forks.
+
+The raw draft-F1 leader is a different [Refined configuration](../configs/tuned_20260913/refined_draft_f1.json):
+`contact.min_vesselness=0.15`, `refined.minimum_natural_sections=1`.
+It achieves **78.8% F1**, 92.9% precision, 68.4% recall (13 matches, 1 extra),
+but drops synthetic development recall from 28/30 to 27/30. It is recorded as
+an experimental alternative and fails the declared selection guard. Requiring
+natural closure can reject a real branch next to the parent or another bright
+structure. Contact's F1 improvement also costs one draft match; F1 does not
+guarantee that precision and recall both increase.
+
+Fresh synthetic validation used **16 cases / 46 daughters**, generated after
+the settings were frozen. Refined and Fusion each retain **45/46 matches and
+1 extra** (97.8% F1). Contact improves from **42/46 with 1 extra** to
+**45/46 with 0 extras** (94.4% to 98.9% F1). Baseline regresses from **45/46
+to 42/46**, with one extra in each (97.8% to 94.4% F1); its draft-selected
+configuration is not a general improvement. The recorded selection was not
+changed using this validation set. All 128 default/selected case runs completed.
+
+The selected Refined configuration also completed all 25 local scans with four
+logical CPUs: mean inference **2.43 s**, maximum **6.33 s**, process peak working
+set **618.8 MiB**. This local resource check excludes imports and output writes;
+loading is recorded separately. It does not establish official judge runtime.
+
+See the [complete 114-trial record and fresh synthetic validation](experiments/tuning_20260913.md),
+its [machine-readable results](experiments/tuning_20260913.json), and
+[parameter usage and reproduction commands](parameter_tuning.md). These are
+best observed settings within this grid on draft development annotations,
+not a global optimum or a real held-out accuracy estimate. Existing default
+predictions were verified identical across all 20 detector/case pairs before
+and after exposing parameters. Tuned behavior requires an explicit `--config`.
+
 ## Per-branch error review
 
 Export scored assignments and nearest-contact diagnostic evidence without
@@ -157,6 +219,11 @@ diagnostics. Previews show three-voxel slabs with projected paths, not a full 3-
 adjudication. Review all projections and the original CT before assigning anatomy.
 
 ## Tests and implementation
+
+For reproducible parameter search with preserved trials and unchanged defaults,
+see [parameter tuning](parameter_tuning.md). A saved `--config` can also be passed
+to this evaluation command; effective settings are recorded in `report.json`
+under `configurations` and in each detector's diagnostics.
 
 `evaluation/landmarks.py` implements matching and metrics;
 `evaluation/draft_set.py` adapts the draft package and runs the registered
