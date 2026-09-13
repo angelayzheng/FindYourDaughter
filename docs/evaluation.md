@@ -233,6 +233,15 @@ official challenge scores. The four detectors use different proposal sets, so
 the mean landmark errors describe each detector's matched subset and should not
 be interpreted as a complete ranking of localization quality.
 
+Generate the condensed comparison plot from the saved reports with:
+
+```powershell
+python scripts/plot_evaluation_metrics.py --output nifti_previews/evaluation_model_comparison.png
+```
+
+The figure compares agreement scores, matched/missed/extra counts, and mean
+ostium/seed/radius errors for the real draft and fresh synthetic datasets.
+
 ## Per-branch error review
 
 Export scored assignments and nearest-contact diagnostic evidence without
