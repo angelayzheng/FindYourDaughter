@@ -1,15 +1,15 @@
 # Evaluate detectors against the draft reference set
 
-Run both existing algorithms, with their unchanged default settings:
+Run all registered algorithms with their default settings:
 
 ```powershell
 python scripts/evaluate_detectors.py
 ```
 
 This reads `eval_set/case_*/` and writes `nifti_previews/evaluation/report.json`,
-`summary.md`, and separate prediction/diagnostic JSON files under `baseline/`
-and `contact/`. No detector changes, training, new dependencies, or network
-access are involved. The reference files are read only, and output inside the
+`summary.md`, and separate prediction/diagnostic JSON files under `baseline/`,
+`contact/`, and `fusion/`. The runner performs no training or parameter tuning;
+no new dependencies or network access are involved. The reference files are read only, and output inside the
 reference dataset is rejected. The required `run.py` command is unchanged.
 
 Select an algorithm, case subset, or matching tolerance:
@@ -82,6 +82,13 @@ excludes matching, hashing, and output writes. It is not a four-core affinity
 benchmark or an official runtime measurement.
 
 ## Initial result
+
+The table below records the initial baseline/contact comparison. The optional
+[fusion detector](fusion_detection.md) now runs through the same scorer: 11/19
+draft matches from 19 predictions, with 8 unmatched predictions. `--detector all`
+includes all three algorithms; use explicit detector selections to reproduce
+individual runs. Fusion remains experimental and has lower draft agreement
+precision than contact.
 
 With the supplied five-case draft set, unchanged detectors, and a 3 mm tolerance:
 

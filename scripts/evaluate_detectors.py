@@ -1,4 +1,4 @@
-"""Evaluate baseline and contact against eval_set's draft daughter references."""
+"""Evaluate registered detectors against eval_set's draft daughter references."""
 
 from __future__ import annotations
 

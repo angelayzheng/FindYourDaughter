@@ -11,6 +11,7 @@ import numpy as np
 import SimpleITK as sitk
 
 from backend.detection import DetectionResult
+from backend.detectors import DETECTOR_NAMES
 from evaluation.draft_set import evaluate_dataset, read_reference
 from evaluation.landmarks import score_landmarks, summarize
 from scripts.evaluate_detectors import main
@@ -156,7 +157,7 @@ class DraftSetTest(unittest.TestCase):
         self.assertEqual(main(["--dataset", str(self.dataset), "--output-dir", str(output)]), 0)
         report = json.loads((output / "report.json").read_text())
         self.assertEqual(report["status"], "complete")
-        for name in ("baseline", "contact"):
+        for name in DETECTOR_NAMES:
             self.assertEqual(report["summary"][name]["matched"], 1, report)
             self.assertEqual(report["summary"][name]["errors"]["radius_error_mm"]["count"], 0)
             prediction = json.loads((output / name / "case_1_prediction.json").read_text())
