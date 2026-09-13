@@ -4,6 +4,7 @@ __pycache__/
 nifti_previews/
 nifti_histograms/
 synthetic_dataset/
+synthetic_previews/*.png
 *.zip
 __pycache__/
 *.py[cod]
