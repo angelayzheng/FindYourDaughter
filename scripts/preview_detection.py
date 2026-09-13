@@ -99,7 +99,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", type=Path, required=True)
     parser.add_argument("--aorta-mask", type=Path, required=True)
-    parser.add_argument("--output-dir", type=Path, help="Default: nifti_previews/detection, with a contact subfolder for that detector")
+    parser.add_argument("--output-dir", type=Path, help="Default: nifti_previews/detection, with a subfolder for alternative detectors")
     parser.add_argument("--detector", choices=DETECTOR_NAMES, default="baseline")
     args = parser.parse_args()
     if args.output_dir is None:
@@ -119,7 +119,8 @@ def main() -> int:
     export_overlays(case, result, args.output_dir)
     print(f"{case_id}: {len(result.branches)} experimental candidates; outputs in {args.output_dir}")
     # Per-contact paths can be large; keep them in the diagnostic file.
-    print(json.dumps({key: value for key, value in result.diagnostics.items() if key != "contacts"}))
+    verbose = {"contacts", "candidates", "source_contact_records", "deferred_common_trunks"}
+    print(json.dumps({key: value for key, value in result.diagnostics.items() if key not in verbose}))
     return 0
 
 

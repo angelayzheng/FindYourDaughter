@@ -17,7 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--aorta-mask", type=Path, required=True, help="Binary parent-aorta NIfTI mask")
     parser.add_argument("--output", type=Path, required=True, help="Destination prediction JSON")
     parser.add_argument("--detector", choices=DETECTOR_NAMES, default="baseline",
-                        help="Algorithm to run (default: unchanged baseline; contact is experimental)")
+                        help="Experimental algorithm to run (default: unchanged baseline)")
     return parser
 
 

@@ -4,8 +4,9 @@
 three papers in `papers/`. Select it with `--detector contact`. The original
 algorithm in `backend/detection.py` is unchanged, and `baseline` remains the
 default. Both return the same evaluator JSON schema and physical LPS coordinates.
-The new method improves specific controlled tests; real-scan accuracy is still
-unmeasured, and it is not a replacement validated for all scans.
+The new method improves specific controlled tests; expert-validated real-scan
+accuracy is still unmeasured. A [paired draft-reference evaluation](evaluation.md)
+now covers the supplied five-case annotation set, with per-case tradeoffs.
 
 ## Run and inspect
 

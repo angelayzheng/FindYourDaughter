@@ -4,6 +4,7 @@ __pycache__/
 nifti_previews/
 nifti_histograms/
 synthetic_dataset/
+synthetic_previews/*.png
 *.zip
 __pycache__/
 *.py[cod]
@@ -12,3 +13,4 @@ __pycache__/
 prediction.json
 tmp/
 papers/
+eval_set/
