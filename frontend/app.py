@@ -104,7 +104,7 @@ st.markdown(
     """<style>
   .stApp { background: #171417; color: #f0e7e9; }
   [data-testid="stSidebar"] { background: #211b20; border-right: 1px solid #75515f; }
-  [data-testid="stMainBlockContainer"] { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+  [data-testid="stMainBlockContainer"] { padding-top: 3.5rem !important; padding-bottom: 2rem !important; }
   [data-testid="stSidebarHeader"] { height: 2.25rem !important; margin-bottom: 0 !important; }
   [data-testid="stSidebarUserContent"] { padding-top: 0 !important; }
   .stApp, .stApp button, .stApp input, .stApp textarea { font-family: Consolas, 'Courier New', monospace; }
@@ -166,6 +166,7 @@ st.markdown(
 )
 
 with st.sidebar:
+    st.image(ROOT / "images" / "FindYourDaughter-Logo-Transparent.png", width=240)
     st.caption("CT review · daughter branches from the aorta")
     with st.expander("01 · CASE FILES", expanded=True):
         dataset_text = st.text_input(
@@ -241,7 +242,7 @@ with st.sidebar:
             disabled=not branch_names,
         )
 
-st.title("Find Your Daughter")
+# st.title("Find Your Daughter")
 st.markdown(
     f"**{case.case_id}** &nbsp; | &nbsp; CT: `{image.name}` &nbsp; | &nbsp; "
     f"{shape[0]} × {shape[1]} × {shape[2]} voxels &nbsp; | &nbsp; "

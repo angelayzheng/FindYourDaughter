@@ -150,7 +150,8 @@ detector result is reported explicitly.
 These candidates are proposals, not verified anatomical labels.
 
 The dashboard is titled **Find Your Daughter** and uses a dark, flat rose
-palette with light text. The main title and sidebar controls start near the top
+palette with light text. A compact project logo appears above the sidebar controls.
+The case summary and sidebar controls start near the top
 of their panels. **Simple View** is the default renderer. It sends
 a bounded sample of CT voxels and mask surface points in the NIfTI RAS display
 geometry to a Canvas 2D viewer. Detected LPS points and directions are
