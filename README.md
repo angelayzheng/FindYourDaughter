@@ -19,6 +19,12 @@ Run from the repository root:
 python run.py --image image.nii.gz --aorta-mask aorta_mask.nii.gz --output prediction.json
 ```
 
+Optional frontend visualization:
+
+```text
+python -m streamlit run frontend/app.py
+```
+
 See [detection and native 3D review](docs/artery_detection.md),
 [setup, data inspection, and visualization](docs/development.md), or
 [contributing](CONTRIBUTING.md) for details.

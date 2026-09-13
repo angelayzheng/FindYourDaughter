@@ -130,7 +130,7 @@ and the bin count with `--bins`; use `--linear-y` for a linear y-axis. Add
 
 ## Visualization
 
-Start the Streamlit frontend with:
+From the repository root, start the optional frontend visualization with:
 
 ```powershell
 python -m streamlit run frontend/app.py
