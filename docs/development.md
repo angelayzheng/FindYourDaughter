@@ -52,6 +52,23 @@ The explicit `--image` and `--aorta-mask` form remains the evaluator contract.
 Both forms validate the final JSON envelope before writing it, including unique
 daughter IDs, finite physical coordinates, positive radii, and unit directions.
 
+The same entrypoint can launch the optional local interfaces. The native VTK
+viewer accepts either explicit files or a subject folder:
+
+```powershell
+python run.py --gui --image dataset/subject001/orig1.nii --aorta-mask dataset/subject001/mask1.nii
+python run.py --gui --subject dataset/subject001
+```
+
+The Streamlit dashboard opens with:
+
+```powershell
+python run.py --webui
+```
+
+These modes are developer conveniences only; the evaluator command does not
+start a UI or require Streamlit/VTK imports.
+
 The baseline validates input geometry and writes candidate ostia, seeds 5 mm
 along each traced branch, radii, and directions in physical LPS coordinates.
 An empty `daughters` list means no candidates passed the current filters.
@@ -172,7 +189,7 @@ python -m streamlit run frontend/app.py
 The dashboard lists NIfTI scans in the chosen dataset folder and its immediate
 subject subfolders. Select a subject, CT file, and optional neighboring aorta
 mask in **Case files**. With a 3-D CT and mask, **Branch detection** runs the selected
-experimental algorithm (baseline by default) once per input revision and caches
+experimental algorithm (refined by default) once per input revision and caches
 its evaluator-format results. Choose an instance to emphasize or hide the branch
 overlay. The main panel has **Simple View**, **Detailed View**, **VTK Snapshot**, and **Results**
 choices. Only the selected view runs, so opening Results does not start a VTK
@@ -181,6 +198,15 @@ measurements. It displays each candidate's parent ID, physical ostium and
 5 mm seed coordinates, radius in millimetres, and unit direction. An empty
 detector result is reported explicitly.
 These candidates are proposals, not verified anatomical labels.
+
+The **Benchmark Results** panel is independent of scan selection. Set its
+results folder (the repository root by default) and choose any recursively
+discovered CSV, such as timing, synthetic-evaluation, or review output. The
+selected table can also be downloaded unchanged from the dashboard.
+It can also run `scripts/evaluate_synthetic_detection.py` directly when pointed
+at a generated synthetic dataset, showing aggregate true/false positives and
+misses plus a downloadable true-vs-guess table for every matched or unmatched
+daughter.
 
 The dashboard is titled **Find Your Daughter** and uses a dark, flat rose
 palette with light text. A compact project logo appears above the sidebar controls.
@@ -256,6 +282,12 @@ same, and closes it when leaving this panel. It also retains the blue ostium,
 teal direction arrow, pale teal radius ring, and branch label, following the
 shared sidebar selection. If VTK cannot create its offscreen context, the
 dashboard reports the failure and shows the CPU point preview with branch markers.
+A **Denoise CT haze** control is available in VTK Snapshot. It replaces voxels
+that lack enough similarly bright immediate 3-D neighbors with a local median;
+adjust the brightness tolerance and required neighbor count in the sidebar. This
+is a visualization filter only: source scan tensors and evaluator inputs are not
+modified. The native viewer exposes the same filter with `--denoise`,
+`--denoise-tolerance`, and `--denoise-neighbors`.
 
 On Windows x64, `vendor/mesa/` supplies OSMesa and `libglapi` from Mesa3D
 24.3.4. The dashboard's VTK subprocess uses Mesa `softpipe` for software

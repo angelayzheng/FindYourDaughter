@@ -21,7 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--subject", type=Path, help="Subject folder; discover its CT and aorta mask automatically")
     parser.add_argument("--output", type=Path, required=True, help="Destination prediction JSON")
     parser.add_argument("--detector", choices=DETECTOR_NAMES,
-                        help="Experimental algorithm to run (default: unchanged baseline)")
+                        help="Experimental algorithm to run (default: refined)")
     parser.add_argument("--config", type=Path, help="Detector JSON configuration; omitted fields use original defaults")
     return parser
 
@@ -86,7 +86,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error(str(error))
     from backend.configuration import configuration, load_configuration
     try:
-        config = load_configuration(args.config, detector=args.detector) if args.config else configuration(args.detector or "baseline")
+        default_detector = args.detector or "refined"  # MERGE CONFLICT: update this to the best detector when selection changes.
+        config = load_configuration(args.config, detector=args.detector) if args.config else configuration(default_detector)
     except (ValueError, OSError) as error:
         parser.error(str(error))
     for label, path in (("image", args.image), ("aorta mask", args.aorta_mask)):

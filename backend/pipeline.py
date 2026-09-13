@@ -17,7 +17,7 @@ def _case_id(path: Path) -> str:
     return stem
 
 
-def run_case(image_path: Path, mask_path: Path, *, detector: str = "baseline",
+def run_case(image_path: Path, mask_path: Path, *, detector: str = "refined",
              parameters: dict | None = None) -> dict[str, Any]:
     """Load one case and return experimental detections in the required schema."""
     case = load_case(image_path, mask_path)

@@ -19,7 +19,7 @@ python scripts/view_nifti_3d.py --image dataset/subject001/orig1.nii --detect --
 The title identifies the selected algorithm. The supplied parent surface, short
 paths, ostia, 5 mm seeds, directions, and radius rings use the same working grid
 as detection. Existing [selection and slice controls](artery_detection.md#run-and-inspect)
-apply. `--detector` requires `--detect`; omit it to use the baseline. The default
+apply. `--detector` requires `--detect`; omit it to use the refined detector. The default
 contact screenshot is `nifti_previews/<case>_contact_detection_3d.png`.
 
 Export evaluator JSON and static candidate overlays:

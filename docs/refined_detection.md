@@ -1,7 +1,7 @@
 # Refined detector and failure analysis
 
-`refined` is a separate experimental algorithm. The baseline, contact, and fusion
-default settings and predictions, and the default `run.py` behavior are preserved.
+`refined` is the default experimental algorithm. The baseline, contact, and fusion
+remain separately selectable; the default `run.py` behavior now uses refined.
 Their five draft-case prediction JSON envelopes were compared before and after
 this addition and are identical. The new algorithm uses only CT and the supplied
 parent mask, runs offline on CPU, and exports the existing six daughter fields.

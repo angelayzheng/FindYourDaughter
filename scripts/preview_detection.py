@@ -74,7 +74,7 @@ def export_overlays(case, result, output: Path) -> list[Path]:
                 ax.set_title(f"branch_{page*6+row+1:03d} | {('native XY', 'native XZ', 'native YZ')[column]} | r={branch.radius_mm:.1f} mm")
                 ax.set_xlabel("native grid distance (mm)")
                 ax.set_aspect("equal")
-        fig.suptitle(f"{case_id} | {result.diagnostics.get('detector', 'baseline')} | EXPERIMENTAL candidates, not reference annotations\n"
+        fig.suptitle(f"{case_id} | {result.diagnostics.get('detector', 'refined')} | EXPERIMENTAL candidates, not reference annotations\n"
                      "red: parent mask | yellow: proposed ostium | cyan: projected path and direction to 5 mm seed\n"
                      "CT/mask show a narrow slab at the ostium; projected paths can extend outside this slab",
                      fontsize=12)
@@ -105,7 +105,7 @@ def main() -> int:
     args = parser.parse_args()
     from backend.configuration import configuration, load_configuration
     try:
-        config = load_configuration(args.config, detector=args.detector) if args.config else configuration(args.detector or "baseline")
+        config = load_configuration(args.config, detector=args.detector) if args.config else configuration(args.detector or "refined")
     except (ValueError, OSError) as error:
         parser.error(str(error))
     if args.output_dir is None:

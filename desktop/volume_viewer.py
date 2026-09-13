@@ -18,6 +18,7 @@ except ImportError as error:
     raise ImportError("The desktop viewer needs VTK. Install requirements-frontend.txt or use the offline installer.") from error
 
 from core import ScanCase, VolumeViewOptions
+from core.denoise import denoise_volume
 
 
 def vtk_matrix(affine: np.ndarray):
@@ -67,7 +68,16 @@ class VolumeViewer:
         if detection is not None and (case.image.data.ndim != 3 or case.image.geometry.spatial_unit != "mm"):
             raise ValueError("Detector overlays require a 3-D display grid in millimetres")
         self.options = options or VolumeViewOptions()
-        self.data = case.image.volume(self.options.frame)
+        self.raw_data = case.image.volume(self.options.frame)
+        self.data = (
+            denoise_volume(
+                self.raw_data,
+                tolerance=self.options.denoise_tolerance,
+                min_neighbors=self.options.denoise_min_neighbors,
+            )
+            if self.options.denoise
+            else self.raw_data
+        )
         if min(self.data.shape) < 2:
             raise ValueError("3-D visualization requires at least two voxels along each spatial axis")
         self.mask = None if case.mask is None else case.mask.volume(
@@ -135,8 +145,8 @@ class VolumeViewer:
 
             self.detection_overlay = DetectionOverlay(self, detection)
             self.default_screenshot = Path("nifti_previews") / f"{case.case_id}_detection_3d.png"
-            if detection.diagnostics.get("detector", "baseline") != "baseline":
-                method = detection.diagnostics["detector"]
+            method = detection.diagnostics.get("detector", "refined")
+            if method != "baseline":
                 self.default_screenshot = Path("nifti_previews") / f"{case.case_id}_{method}_detection_3d.png"
             self.volume.SetVisibility(False)
             self.outline_actor.SetVisibility(False)
@@ -448,6 +458,7 @@ class VolumeViewer:
             f"Planes {'ON' if self.planes_visible else 'OFF'} / Cut {'ON' if self.clip_enabled else 'OFF'} / "
             f"{'MIP' if self.mip else 'Composite'} / CT stride {self.stride} / "
             f"Min {self.min_intensity if self.min_intensity is not None else 'OFF'} / "
+            f"Denoise {'ON' if self.options.denoise else 'OFF'} / "
             f"{self.case.image.geometry.spatial_unit}"
         )
 

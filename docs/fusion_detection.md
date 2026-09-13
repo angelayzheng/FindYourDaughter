@@ -2,7 +2,7 @@
 
 `fusion` implements the improvement notes' shared candidate pipeline as a new
 algorithm. The original `baseline` and `contact` implementations are unchanged,
-and the default evaluator still uses `baseline`. Fusion runs both sources,
+and the default evaluator now uses `refined`. Fusion runs both sources,
 measures their proposals, groups duplicate observations, and selects one path
 per group. It is a deterministic CPU algorithm, not a trained model.
 

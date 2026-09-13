@@ -110,6 +110,9 @@ def render_3d(
                     min_intensity=options.min_intensity,
                     branches=branches or [], show_branches=show_branches,
                     selected_branch=selected_branch,
+                    denoise=options.denoise,
+                    denoise_tolerance=options.denoise_tolerance,
+                    denoise_min_neighbors=options.denoise_min_neighbors,
                     slice_indices=slice_indices or tuple(size // 2 for size in case.image.shape[:3]))
     if session is not None:
         return session.render(settings)
@@ -145,9 +148,13 @@ class VTKRenderSession:
         self._lock = Lock()
         command = [sys.executable, "-m", "frontend.render", "--serve", "--image", str(image),
                    "--settings", json.dumps(dict(frame=options.frame,
-                                                   max_dimension=options.max_dimension,
-                                                   window=options.window, level=options.level,
-                                                   opacity=options.opacity))]
+                                                    max_dimension=options.max_dimension,
+                                                    window=options.window, level=options.level,
+                                                    opacity=options.opacity,
+                                                    min_intensity=options.min_intensity,
+                                                    denoise=options.denoise,
+                                                    denoise_tolerance=options.denoise_tolerance,
+                                                    denoise_min_neighbors=options.denoise_min_neighbors))]
         if mask is not None:
             command.extend(("--mask", str(mask)))
         self._process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,

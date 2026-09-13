@@ -1,6 +1,7 @@
 """Local, CPU-only inspection dashboard for CT scans and aorta branches."""
 
 from concurrent.futures import ThreadPoolExecutor
+import csv
 from pathlib import Path
 import json
 import sys
@@ -22,6 +23,7 @@ from frontend.cases import find_subjects, mask_choices
 from frontend.detailed_view import detailed_view, scan_revision, volume_payload
 from frontend.point_cloud import render_projection
 from frontend.render import VTKRenderSession, VTKUnavailable, render_3d
+from frontend.results import comparison_csv, discover_csv_files, read_csv_file, synthetic_comparison_rows
 
 
 @st.cache_resource(show_spinner=False, max_entries=1)
@@ -184,6 +186,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+panel = st.segmented_control(
+    "Panel",
+    ["Simple View", "Detailed View", "Results", "Benchmark Results"],
+    default="Simple View",
+    label_visibility="collapsed",
+    width="stretch",
+    key="main_panel",
+)
+
 with st.sidebar:
     st.image(ROOT / "images" / "FindYourDaughter-Logo-Transparent.png", width=240)
     st.caption("CT review · daughter branches from the aorta")
@@ -197,24 +208,123 @@ with st.sidebar:
         subjects = find_subjects(dataset)
         if not subjects:
             st.info("No NIfTI scans were found here. Check the dataset folder.")
-            st.stop()
-        subject = st.selectbox(
-            "Subject", list(subjects), key=f"subject:{dataset.resolve()}"
+            if panel != "Benchmark Results":
+                st.stop()
+        if not subjects and panel == "Benchmark Results":
+            st.caption("Benchmark Results does not require a scan selection.")
+        if subjects:
+            subject = st.selectbox(
+                "Subject", list(subjects), key=f"subject:{dataset.resolve()}"
+            )
+            image = st.selectbox(
+                "CT image",
+                subjects[subject],
+                format_func=lambda path: path.name,
+                key=f"image:{dataset.resolve()}:{subject}",
+            )
+            masks = [None, *mask_choices(image)]
+            mask = st.selectbox(
+                "Aorta mask",
+                masks,
+                format_func=lambda path: "None" if path is None else path.name,
+                index=1 if len(masks) == 2 else 0,
+                key=f"mask:{image.resolve()}",
+            )
+
+if panel == "Benchmark Results":
+    st.title("Benchmark Results")
+    st.subheader("Synthetic evaluation")
+    synthetic_root = Path(
+        st.text_input(
+            "Synthetic dataset folder",
+            str(ROOT / "synthetic_dataset"),
+            help="Folder containing subject*/orig*.nii, mask*.nii, and truth*.json.",
         )
-        image = st.selectbox(
-            "CT image",
-            subjects[subject],
-            format_func=lambda path: path.name,
-            key=f"image:{dataset.resolve()}:{subject}",
+    ).expanduser()
+    synthetic_detector = st.selectbox("Synthetic detector", DETECTOR_NAMES, key="synthetic_detector")
+    synthetic_tolerance = st.number_input(
+        "Ostium matching tolerance (mm)", min_value=0.1, value=3.0, step=0.5, key="synthetic_tolerance"
+    )
+    if st.button("Run synthetic evaluation", type="primary"):
+        try:
+            from scripts.evaluate_synthetic_detection import evaluate
+
+            with st.spinner("Running detector against synthetic truth…"):
+                st.session_state["synthetic_report"] = evaluate(
+                    synthetic_root, synthetic_tolerance, detector=synthetic_detector
+                )
+            st.session_state["synthetic_report_error"] = None
+        except (OSError, ValueError, RuntimeError) as error:
+            st.session_state["synthetic_report"] = None
+            st.session_state["synthetic_report_error"] = str(error)
+    if st.session_state.get("synthetic_report_error"):
+        st.error(st.session_state["synthetic_report_error"])
+    report = st.session_state.get("synthetic_report")
+    if report:
+        metrics = st.columns(5)
+        for column, label, value in zip(
+            metrics,
+            ("True positives", "False positives", "Missed truth", "Ostium error", "Seed error"),
+            (
+                report["true_positive"],
+                report["false_positive"],
+                report["false_negative"],
+                f"{report['mean_errors'].get('ostium_mm', 0):.2f} mm",
+                f"{report['mean_errors'].get('seed_mm', 0):.2f} mm",
+            ),
+        ):
+            column.metric(label, value)
+        comparison = synthetic_comparison_rows(report)
+        st.caption("True-vs-guess rows use the scorer's one-to-one ostium matching.")
+        st.dataframe(comparison, hide_index=True, width="stretch")
+        st.download_button(
+            "Download true-vs-guess CSV",
+            comparison_csv(comparison),
+            file_name=f"{synthetic_detector}_synthetic_comparison.csv",
+            mime="text/csv",
+            on_click="ignore",
         )
-        masks = [None, *mask_choices(image)]
-        mask = st.selectbox(
-            "Aorta mask",
-            masks,
-            format_func=lambda path: "None" if path is None else path.name,
-            index=1 if len(masks) == 2 else 0,
-            key=f"mask:{image.resolve()}",
+        with st.expander("Per-case totals", expanded=False):
+            st.dataframe(
+                [
+                    {key: case[key] for key in ("case_id", "truth", "predictions", "matched")}
+                    for case in report["cases"]
+                ],
+                hide_index=True,
+                width="stretch",
+            )
+    st.divider()
+    st.subheader("Saved CSV files")
+    results_root = Path(
+        st.text_input("Results folder", str(ROOT), help="Recursively search for CSV benchmark outputs.")
+    ).expanduser()
+    csv_files = discover_csv_files(results_root)
+    if not csv_files:
+        st.info(f"No CSV result files found under {results_root}.")
+    else:
+        selected_csv = st.selectbox(
+            "CSV result file",
+            csv_files,
+            format_func=lambda path: str(path.relative_to(results_root.resolve())),
         )
+        try:
+            columns, rows = read_csv_file(selected_csv)
+        except (OSError, UnicodeError, csv.Error) as error:
+            st.error(f"Could not read {selected_csv}: {error}")
+        else:
+            st.caption(f"{len(rows)} rows · {len(columns)} columns")
+            if columns:
+                st.dataframe(rows, hide_index=True, width="stretch")
+                st.download_button(
+                    "Download CSV",
+                    selected_csv.read_bytes(),
+                    file_name=selected_csv.name,
+                    mime="text/csv",
+                    on_click="ignore",
+                )
+            else:
+                st.warning("The selected CSV has no header row.")
+    st.stop()
 
 try:
     image_mtime = image.stat().st_mtime_ns
@@ -232,7 +342,8 @@ with st.sidebar:
         detector = st.selectbox(
             "Algorithm",
             DETECTOR_NAMES,
-            help="Baseline is the default evaluator algorithm. Contact is an alternate experimental method.",
+            index=DETECTOR_NAMES.index("refined"),
+            help="Refined is the default evaluator algorithm. Baseline and Contact remain available for comparison.",
         )
         if not can_detect:
             st.caption("Select a 3-D CT and its aorta mask to run detection.")
@@ -274,7 +385,7 @@ if detection_error:
 
 panel = st.segmented_control(
     "Panel",
-    ["Simple View", "Detailed View", "VTK Snapshot", "Results"],
+    ["Simple View", "Detailed View", "VTK Snapshot", "Results", "Benchmark Results"],
     default="Simple View",
     label_visibility="collapsed",
     width="stretch",
@@ -381,6 +492,17 @@ elif panel == "VTK Snapshot":
                 "Minimum intensity", -1000, 1500, 100, disabled=not use_threshold
             )
             opacity = st.slider("Volume opacity", 0.0, 0.5, 0.12, 0.01)
+            denoise = st.checkbox(
+                "Denoise CT haze",
+                False,
+                help="Replace voxels without enough similarly bright immediate 3-D neighbors.",
+            )
+            denoise_tolerance = st.slider(
+                "Denoise brightness tolerance", 0.0, 200.0, 40.0, 5.0, disabled=not denoise
+            )
+            denoise_min_neighbors = st.slider(
+                "Denoise similar neighbors", 1, 26, 2, disabled=not denoise
+            )
             max_dimension = st.select_slider(
                 "CT sampling limit", [64, 96, 128, 192, 256], value=128
             )
@@ -439,6 +561,9 @@ elif panel == "VTK Snapshot":
             window,
             level,
             threshold if use_threshold else None,
+            denoise,
+            denoise_tolerance,
+            denoise_min_neighbors,
             opacity,
             max_dimension,
             azimuth,
@@ -454,7 +579,14 @@ elif panel == "VTK Snapshot":
             plane_opacity,
             slice_indices,
         )
-        session_key = (case_key, frame, max_dimension)
+        session_key = (
+            case_key,
+            frame,
+            max_dimension,
+            denoise,
+            denoise_tolerance,
+            denoise_min_neighbors,
+        )
         if st.session_state.get("vtk_session_key") != session_key:
             old_session = st.session_state.pop("vtk_session", None)
             if old_session is not None:
@@ -468,6 +600,9 @@ elif panel == "VTK Snapshot":
                     window=window,
                     level=level,
                     min_intensity=threshold if use_threshold else None,
+                    denoise=denoise,
+                    denoise_tolerance=denoise_tolerance,
+                    denoise_min_neighbors=denoise_min_neighbors,
                     opacity=opacity,
                 )
                 started = monotonic()

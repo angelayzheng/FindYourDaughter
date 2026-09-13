@@ -18,7 +18,7 @@ from backend.detectors import DETECTOR_NAMES
 from backend.configuration import configuration, load_configuration
 
 
-def evaluate(dataset: Path, tolerance_mm: float = 3.0, *, detector: str = "baseline", parameters: dict | None = None) -> dict:
+def evaluate(dataset: Path, tolerance_mm: float = 3.0, *, detector: str = "refined", parameters: dict | None = None) -> dict:
     if not np.isfinite(tolerance_mm) or tolerance_mm <= 0:
         raise ValueError("Matching tolerance must be finite and positive")
     config = configuration(detector, parameters)
@@ -55,8 +55,33 @@ def evaluate(dataset: Path, tolerance_mm: float = 3.0, *, detector: str = "basel
         true_positive += len(matches)
         false_positive += len(prediction) - len(matches)
         false_negative += len(truth) - len(matches)
-        rows.append({"case_id": truth_document["case_id"], "truth": len(truth),
-                     "predictions": len(prediction), "matched": len(matches)})
+        rows.append({
+            "case_id": truth_document["case_id"],
+            "truth": len(truth),
+            "predictions": len(prediction),
+            "matched": len(matches),
+            "truth_daughters": truth,
+            "predicted_daughters": prediction,
+            "matches": [
+                {
+                    "prediction_index": int(prediction_index),
+                    "truth_index": int(truth_index),
+                    "ostium_error_mm": float(np.linalg.norm(
+                        np.array(prediction[prediction_index]["ostium_xyz_mm"])
+                        - np.array(truth[truth_index]["ostium_xyz_mm"])
+                    )),
+                    "seed_error_mm": float(np.linalg.norm(
+                        np.array(prediction[prediction_index]["seed_xyz_mm"])
+                        - np.array(truth[truth_index]["seed_xyz_mm"])
+                    )),
+                    "radius_error_mm": abs(
+                        prediction[prediction_index]["radius_mm"]
+                        - truth[truth_index]["radius_mm"]
+                    ),
+                }
+                for prediction_index, truth_index in matches
+            ],
+        })
     return {"scope": "Generated tubes only; development tolerance, not official challenge scoring", "detector": detector,
             "configuration": config,
             "matching_tolerance_mm": tolerance_mm, "true_positive": true_positive,
@@ -70,11 +95,11 @@ def main() -> int:
     parser.add_argument("--dataset", type=Path, required=True)
     parser.add_argument("--tolerance-mm", type=float, default=3.0)
     parser.add_argument("--output", type=Path, default=Path("nifti_previews/synthetic_metrics.json"))
-    parser.add_argument("--detector", choices=DETECTOR_NAMES)
+    parser.add_argument("--detector", choices=DETECTOR_NAMES, default="refined")
     parser.add_argument("--config", type=Path)
     args = parser.parse_args()
     try:
-        config = load_configuration(args.config, detector=args.detector) if args.config else configuration(args.detector or "baseline")
+        config = load_configuration(args.config, detector=args.detector) if args.config else configuration(args.detector)
         result = evaluate(args.dataset, args.tolerance_mm, detector=config["detector"], parameters=config["parameters"])
     except (ValueError, OSError) as error:
         parser.error(str(error))

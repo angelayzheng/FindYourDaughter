@@ -155,11 +155,11 @@ class ContactDetectionTest(unittest.TestCase):
             with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
                 ContactOptions(**kwargs)
 
-    def test_default_selection_preserves_baseline_and_unknown_names_fail(self):
+    def test_default_selection_preserves_refined_and_unknown_names_fail(self):
         image, mask = anatomy.phantom([((32, 32, 36), (64, 32, 36), 2.5)])
-        expected = detect_daughters(image, mask).daughters()
+        expected = detect(image, mask, detector="refined").daughters()
         self.assertEqual(detect(image, mask).daughters(), expected)
-        self.assertEqual(detect(image, mask, detector="baseline").daughters(), expected)
+        self.assertEqual(detect(image, mask, detector="baseline").daughters(), detect_daughters(image, mask).daughters())
         with self.assertRaisesRegex(ValueError, "Unknown detector"):
             detect(image, mask, detector="missing")
 
