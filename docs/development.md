@@ -52,6 +52,23 @@ The explicit `--image` and `--aorta-mask` form remains the evaluator contract.
 Both forms validate the final JSON envelope before writing it, including unique
 daughter IDs, finite physical coordinates, positive radii, and unit directions.
 
+The same entrypoint can launch the optional local interfaces. The native VTK
+viewer accepts either explicit files or a subject folder:
+
+```powershell
+python run.py --gui --image dataset/subject001/orig1.nii --aorta-mask dataset/subject001/mask1.nii
+python run.py --gui --subject dataset/subject001
+```
+
+The Streamlit dashboard opens with:
+
+```powershell
+python run.py --webui
+```
+
+These modes are developer conveniences only; the evaluator command does not
+start a UI or require Streamlit/VTK imports.
+
 The baseline validates input geometry and writes candidate ostia, seeds 5 mm
 along each traced branch, radii, and directions in physical LPS coordinates.
 An empty `daughters` list means no candidates passed the current filters.

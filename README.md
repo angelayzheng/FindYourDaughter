@@ -19,6 +19,9 @@ Run from the repository root:
 python run.py --image image.nii.gz --aorta-mask aorta_mask.nii.gz --output prediction.json
 ```
 
+Developer UI shortcuts are available with `python run.py --gui --subject
+dataset/subject001` or `python run.py --webui`.
+
 Optional frontend visualization:
 
 ```text

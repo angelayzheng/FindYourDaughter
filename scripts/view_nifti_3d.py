@@ -15,7 +15,9 @@ from backend.detectors import DETECTOR_NAMES
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--image", type=Path, required=True, help="CT .nii or .nii.gz")
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--image", type=Path, help="CT .nii or .nii.gz")
+    source.add_argument("--subject", type=Path, help="Subject folder; discover CT and mask automatically")
     parser.add_argument("--detect", action="store_true",
                         help="Run the experimental detector and overlay branches on its working grid")
     parser.add_argument("--detector", choices=DETECTOR_NAMES,
@@ -24,7 +26,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--branch", type=int,
                         help="Initially focus this candidate number (1-based; requires --detect)")
     parser.add_argument(
-        "--mask",
+        "--mask", "--aorta-mask", dest="mask",
         type=Path,
         help="Optional matching mask; otherwise detect one neighboring mask*.nii",
     )
@@ -70,6 +72,17 @@ def main(argv: list[str] | None = None) -> None:
         help="Save --screenshot and exit without opening the viewer",
     )
     args = parser.parse_args(argv)
+    if args.subject is not None:
+        from backend.cli import discover_subject_inputs
+
+        try:
+            args.image, discovered_mask = discover_subject_inputs(args.subject)
+        except ValueError as error:
+            parser.error(str(error))
+        if args.mask is None:
+            args.mask = discovered_mask
+        if args.no_mask:
+            parser.error("--subject cannot be combined with --no-mask")
     if args.mask is not None and args.no_mask:
         parser.error("--mask and --no-mask cannot be used together")
     if args.offscreen and args.screenshot is None:
