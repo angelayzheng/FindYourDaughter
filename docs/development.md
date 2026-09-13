@@ -174,7 +174,7 @@ subject subfolders. Select a subject, CT file, and optional neighboring aorta
 mask in **Case files**. With a 3-D CT and mask, **Branch detection** runs the selected
 experimental algorithm (baseline by default) once per input revision and caches
 its evaluator-format results. Choose an instance to emphasize or hide the branch
-overlay. The main panel has **Simple View**, **Detailed View**, and **Results**
+overlay. The main panel has **Simple View**, **Detailed View**, **VTK Snapshot**, and **Results**
 choices. Only the selected view runs, so opening Results does not start a VTK
 render. **Results** places the evaluator JSON export above the
 measurements. It displays each candidate's parent ID, physical ostium and
@@ -200,29 +200,62 @@ a new server PNG. Window, level, sampling, and visibility changes
 rebuild the sampled scene. This is a point preview, not volumetric CT rendering;
 it uses neither WebGL nor external assets.
 
-Choose **Detailed View** for the native CPU volume scene. Sidebar dropdowns group
-volume contrast, camera, and slice-plane controls. These include minimum
-intensity, opacity, MIP, CT sampling, mask focus, three orthogonal I/J/K voxel
-indices with physical axis labels, independent 3-D plane visibility and opacity,
-and a CT cut at K. Slice panels can be shown beside the volume view. I/J/K are
-voxel indices for browsing, not physical-space detection coordinates. Each
-slider or toggle change starts a new render automatically; download the image
-as PNG when ready. The detector measurements are currently overlaid in the fast
-view and listed in Results. Detailed View now draws the same blue ostium,
-teal direction arrow, pale teal radius ring, and branch label over its VTK
-volume and slice scene; its branch visibility and selection follow the shared
-sidebar controls. When VTK is unavailable, the CPU preview retains those
-branch markers.
-A progress bar shows elapsed rendering time, and a completion message appears
-when the image is ready. The dashboard keeps a VTK render process and its loaded
-scan alive while the selected case, frame, and CT sampling limit stay the same.
-Changing those settings rebuilds the scene and takes longer than camera or
-display adjustments. Rendering still uses the CPU-only Mesa `softpipe` driver,
-so higher CT sampling limits and large output images can take longer than a GPU.
-In Detailed View, the browser displays a VTK-rendered image; rotation uses
-the camera sliders.
-If VTK cannot create its offscreen context, the dashboard explicitly reports
-the failure and shows the simpler CPU point preview instead.
+Choose **Detailed View** for interactive CPU volume rendering and three native
+slice panels. Controls inside this viewer update locally: drag to rotate,
+Shift + drag to pan, wheel over the volume to zoom, and wheel over a slice to
+move one voxel. Click a slice to move the linked crosshair. Window, level,
+aorta visibility, slice planes, opacity, minimum CT intensity, MIP, sampling,
+aorta focus, and clipping above the current K index also stay in the browser.
+The threshold and clipping apply to the 3-D CT, so source slices remain available
+for inspection. Select a branch to move the slices to its ostium and display
+its LPS measurements. A slice shows a branch point only within half a voxel of
+that plane. I/J/K identify native voxel indices; the labels show increasing
+physical axis directions. The readout reports LPS coordinates and the original
+scaled voxel value (HU for calibrated CT). **Save view PNG** captures the volume
+and the three slices, preserving their display aspect ratios.
+
+The full selected frame and binary parent mask are transferred once, with gzip
+compression and lossless float32 CT values. No cropping or rounding is applied
+to the slice data. A Web Worker owns the decoded voxels, computes slices and
+software ray casts, and sends pixel buffers back to the local canvas. Rapid
+events are coalesced; only the newest pending render is retained. A small
+preview finishes during continuous dragging, while obsolete refinements are
+cancelled. After 220 ms without input, the worker renders a 280-pixel longest-edge
+frame; movement uses 96 pixels. The 3-D image is an adaptive preview with sampled
+CT ray steps and a nearest-voxel mask surface, not an exact VTK rendering. Slice
+panels retain native resolution at all times. The original native VTK renderer
+is available in **VTK Snapshot** and in the desktop viewer.
+
+Only initial loading and a component remount exchange acknowledgment messages
+with Python. Changing the selected model sends small branch lists after the
+cached detector call; it does not reload voxel buffers or reset the camera.
+File paths, modification times, and the selected frame identify a volume
+revision. Switching volumes terminates the old worker. Small local view settings
+survive a component remount in that browser tab. The server caches at most one
+loaded scan and one compressed frame; prediction caching is bounded to 32 entries.
+The interactive frame limit is 64 Mi voxels and the compressed transfer limit is
+128 MiB. Larger scans report a clear error and can use VTK Snapshot or the desktop
+viewer. At the limit, decoded CT and mask arrays occupy 320 MiB; compression,
+transport and Python/browser objects require additional memory.
+
+The viewer uses bundled HTML/JavaScript, Canvas 2D, Web Workers, and the browser's
+built-in `DecompressionStream`. It requires a modern browser and no WebGL,
+GPU, CDN, Node server, or runtime internet connection. Node.js is only optional
+development tooling for JavaScript tests and benchmarks. The full NIfTI affine
+is preserved for 3-D display and voxel/physical conversion. Known spatial units
+are converted to mm; unknown units are labeled and mm detector overlays are
+disabled. The two-dimensional panels display native array planes, with
+spacing-correct aspect ratios; they are not resampled anatomical planes for an
+oblique or sheared affine. See [viewer measurements](viewer_performance.md).
+
+**VTK Snapshot** preserves the former Detailed View controls and PNG rendering:
+sidebar dropdowns group volume contrast, camera and cross-section settings.
+Each change requests a new server render and displays its elapsed time. The
+dashboard reuses the VTK process while the case, frame and sampling stay the
+same, and closes it when leaving this panel. It also retains the blue ostium,
+teal direction arrow, pale teal radius ring, and branch label, following the
+shared sidebar selection. If VTK cannot create its offscreen context, the
+dashboard reports the failure and shows the CPU point preview with branch markers.
 
 On Windows x64, `vendor/mesa/` supplies OSMesa and `libglapi` from Mesa3D
 24.3.4. The dashboard's VTK subprocess uses Mesa `softpipe` for software
@@ -382,7 +415,7 @@ VTK is pinned in `requirements-frontend.txt`, bundled in `vendor/wheels`, and
 included in the offline installer. The Windows x64 Mesa DLLs are bundled in
 `vendor/mesa/` with pinned hashes. Importing `core` does not import VTK or open
 a window. The native viewer retains its interactive controls; Streamlit reuses
-its VTK volume scene as the main view.
+its VTK volume scene in the optional VTK Snapshot panel.
 
 ## Verification
 

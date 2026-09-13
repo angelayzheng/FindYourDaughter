@@ -1,0 +1,72 @@
+{
+  "case_id": "subject001",
+  "shape": [
+    512,
+    512,
+    174
+  ],
+  "python": "3.13.7",
+  "platform": "Windows",
+  "node": "v22.21.0",
+  "scan_load_ms": 112.16840002452955,
+  "pack_ms": 2245.021299982909,
+  "transfer_bytes": 57776957,
+  "decoded_voxel_bytes": 228065280,
+  "limitations": "Node runs the actual CPU worker logic. Timings exclude a browser DOM, canvas painting, Streamlit transport and network. The adaptive preview and VTK PNG differ in resolution and rendering algorithm.",
+  "javascript": {
+    "decode_ms": 817.3960000000001,
+    "initial_native_slices_ms": 31.041999999999916,
+    "mask_planes_96_ms": {
+      "samples": [
+        5.049499999999966,
+        4.200199999999995,
+        3.7929000000000315,
+        3.6141999999999825,
+        3.659400000000005
+      ],
+      "median": 3.7929000000000315
+    },
+    "mask_planes_280_ms": {
+      "samples": [
+        15.555100000000039,
+        14.387499999999932,
+        15.051400000000058,
+        15.15829999999994,
+        14.843499999999949
+      ],
+      "median": 15.051400000000058
+    },
+    "ct_mask_planes_96_ms": {
+      "samples": [
+        14.375499999999988,
+        9.171399999999949,
+        9.220100000000002,
+        10.083200000000033,
+        11.190200000000004
+      ],
+      "median": 10.083200000000033
+    },
+    "ct_mask_planes_280_ms": {
+      "samples": [
+        81.54899999999998,
+        83.11070000000018,
+        73.10159999999996,
+        84.44119999999998,
+        92.53019999999992
+      ],
+      "median": 83.11070000000018
+    }
+  },
+  "vtk_session_start_ms": 833.9024999877438,
+  "vtk_first_frame_ms": 521.316799975466,
+  "vtk_warm_camera_ms": {
+    "samples": [
+      401.46149997599423,
+      397.5351999979466,
+      393.6643999768421,
+      393.4249000158161,
+      397.61310000903904
+    ],
+    "median": 397.5351999979466
+  }
+}

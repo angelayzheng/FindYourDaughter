@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive CT volume</title>
+<link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+<div id="loading" role="status">Loading interactive viewer…</div>
+<main id="viewer" hidden>
+  <div class="toolbar">
+    <label>Window <input id="window" type="range" min="1" max="2500" step="1"><output id="window-value"></output></label>
+    <label>Level <input id="level" type="range" min="-1000" max="1500" step="1"><output id="level-value"></output></label>
+    <label><input id="show_mask" type="checkbox"> Aorta</label>
+    <label><input id="show_volume" type="checkbox"> CT volume</label>
+    <label><input id="show_planes" type="checkbox"> 3D slices</label>
+    <label><input id="markers" type="checkbox" checked> Branches</label>
+    <button id="reset">Reset camera</button>
+    <button id="save">Save view PNG</button>
+  </div>
+  <details><summary>Volume and plane settings</summary>
+    <div class="toolbar">
+      <label><input id="mip" type="checkbox"> Maximum intensity projection</label>
+      <label>CT opacity <input id="opacity" type="range" min="0" max="0.5" step="0.01"><output id="opacity-value"></output></label>
+      <label><input id="threshold_enabled" type="checkbox"> Minimum intensity</label>
+      <label>Threshold <input id="threshold" type="range" min="-1000" max="1500" step="1"><output id="threshold-value"></output></label>
+      <label>Plane opacity <input id="plane_opacity" type="range" min="0" max="1" step="0.05"><output id="plane_opacity-value"></output></label>
+      <label>CT sampling <select id="sampling"><option>64</option><option>128</option><option>192</option><option>256</option></select></label>
+      <label><input id="clip" type="checkbox"> Clip CT above K</label>
+      <label><input id="focus_mask" type="checkbox"> Focus aorta</label>
+    </div>
+  </details>
+  <div class="branchbar">
+    <label>Inspect branch <select id="branch"><option value="">All candidates</option></select></label>
+    <span id="branch-detail">Click a branch marker to inspect its measurements.</span>
+  </div>
+  <div class="stage">
+    <section class="volume">
+      <canvas id="volume" aria-label="3D CT: drag to rotate, shift-drag to pan, wheel to zoom"></canvas>
+      <div class="hint">Drag: rotate · Shift + drag: pan · Wheel: zoom · Double-click: reset</div>
+      <span id="render-status" role="status"></span>
+    </section>
+    <div class="slices">
+      <section class="slice"><label id="label-0" for="index-0">I</label><div class="slice-image"><canvas id="slice-0" aria-label="Native I cross-section; click to move crosshair, wheel to change slice"></canvas></div><input id="index-0" type="range" min="0" step="1"><output id="index-value-0"></output></section>
+      <section class="slice"><label id="label-1" for="index-1">J</label><div class="slice-image"><canvas id="slice-1" aria-label="Native J cross-section; click to move crosshair, wheel to change slice"></canvas></div><input id="index-1" type="range" min="0" step="1"><output id="index-value-1"></output></section>
+      <section class="slice"><label id="label-2" for="index-2">K</label><div class="slice-image"><canvas id="slice-2" aria-label="Native K cross-section; click to move crosshair, wheel to change slice"></canvas></div><input id="index-2" type="range" min="0" step="1"><output id="index-value-2"></output></section>
+    </div>
+  </div>
+  <div id="position"></div>
+  <div id="performance" class="muted"></div>
+  <p class="muted">Slice panels use every native voxel and the original scaled float32 values. The 3D view uses an adaptive CPU preview; it sharpens after movement. Branches are detector proposals. Blue: ostium; teal: seed, direction and radius ring.</p>
+</main>
+<script src="render_core.js"></script>
+<script src="viewer.js"></script>
+</body>
+</html>

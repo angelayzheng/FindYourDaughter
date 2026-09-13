@@ -19,11 +19,12 @@ from backend.pipeline import run_case
 from core import ScanCase, VolumeViewOptions
 from frontend.browser_scene import scene_html, scene_payload
 from frontend.cases import find_subjects, mask_choices
+from frontend.detailed_view import detailed_view, scan_revision, volume_payload
 from frontend.point_cloud import render_projection
 from frontend.render import VTKRenderSession, VTKUnavailable, render_3d
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=False, max_entries=1)
 def load_case(
     image: Path, mask: Path | None, image_mtime: int, mask_mtime: int | None
 ) -> ScanCase:
@@ -31,12 +32,21 @@ def load_case(
     return ScanCase.from_nifti(image, mask)
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, max_entries=32)
 def load_prediction(
     image: Path, mask: Path, image_mtime: int, mask_mtime: int, detector: str
 ) -> dict:
     """Run the evaluator detector once per input revision and algorithm."""
     return run_case(image, mask, detector=detector)
+
+
+@st.cache_resource(show_spinner=False, max_entries=1)
+def load_browser_volume(image: Path, mask: Path | None, image_mtime: int,
+                        mask_mtime: int | None, frame: int) -> dict:
+    """Compress one current frame once; camera/contrast are browser-local."""
+    case = load_case(image, mask, image_mtime, mask_mtime)
+    return volume_payload(case, frame=frame,
+                          revision=scan_revision(image, mask, image_mtime, mask_mtime, frame))
 
 
 def prepare_view(
@@ -264,18 +274,20 @@ if detection_error:
 
 panel = st.segmented_control(
     "Panel",
-    ["Simple View", "Detailed View", "Results"],
+    ["Simple View", "Detailed View", "VTK Snapshot", "Results"],
     default="Simple View",
     label_visibility="collapsed",
     width="stretch",
     key="main_panel",
 )
 
-if panel == "Simple View":
+if panel != "VTK Snapshot":
     old_session = st.session_state.pop("vtk_session", None)
     if old_session is not None:
         old_session.close()
     st.session_state.pop("vtk_session_key", None)
+
+if panel == "Simple View":
     with st.sidebar:
         with st.expander("03 · SIMPLE VIEW SETTINGS", expanded=False):
             frame = (
@@ -329,6 +341,18 @@ if panel == "Simple View":
             "This view samples the CT; use Detailed View to inspect the full volume."
         )
 elif panel == "Detailed View":
+    frame = (st.sidebar.slider("Frame", 0, shape[3] - 1, 0, key="detailed_frame")
+             if len(shape) == 4 and shape[3] > 1 else 0)
+    try:
+        with st.spinner("Preparing the scan for interactive viewing…"):
+            payload = load_browser_volume(image, mask, image_mtime, mask_mtime, frame)
+        detailed_view(payload, prediction=prediction, selected_branch=selected_branch,
+                      show_branches=show_branches)
+    except (OSError, ValueError, RuntimeError, ImportError) as error:
+        st.error(f"Interactive view could not load: {error}")
+    st.caption("Use the controls inside the viewer for live navigation. VTK Snapshot retains "
+               "the native volume renderer and its export controls.")
+elif panel == "VTK Snapshot":
     with st.sidebar:
         with st.expander("03 · DETAILED VIEW SETTINGS", expanded=False):
             frame = (
