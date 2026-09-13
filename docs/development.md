@@ -175,7 +175,11 @@ and a CT cut at K. Slice panels can be shown beside the volume view. I/J/K are
 voxel indices for browsing, not physical-space detection coordinates. Each
 slider or toggle change starts a new render automatically; download the image
 as PNG when ready. The detector measurements are currently overlaid in the fast
-view and listed in Results; the detailed VTK PNG remains a volume/slice view.
+view and listed in Results. Detailed View now draws the same blue ostium,
+teal direction arrow, pale teal radius ring, and branch label over its VTK
+volume and slice scene; its branch visibility and selection follow the shared
+sidebar controls. When VTK is unavailable, the CPU preview retains those
+branch markers.
 A progress bar shows elapsed rendering time, and a completion message appears
 when the image is ready. The dashboard keeps a VTK render process and its loaded
 scan alive while the selected case, frame, and CT sampling limit stay the same.

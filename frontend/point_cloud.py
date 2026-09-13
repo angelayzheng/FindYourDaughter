@@ -47,7 +47,9 @@ def sample_scene(case: ScanCase, *, frame: int = 0, window: float = 400,
 def render_projection(case: ScanCase, *, frame: int = 0, window: float = 400,
                       level: float = 40, show_volume: bool = True,
                       show_mask: bool = True, azimuth: float = 30,
-                      elevation: float = 25) -> tuple[bytes, int, int]:
+                      elevation: float = 25, branches: list[dict] | None = None,
+                      show_branches: bool = True,
+                      selected_branch: str | None = None) -> tuple[bytes, int, int]:
     """Make a 3-D perspective preview without browser WebGL or host OpenGL."""
     ct_points, mask_points = sample_scene(case, frame=frame, window=window, level=level,
                                           show_volume=show_volume, show_mask=show_mask)
@@ -87,6 +89,35 @@ def render_projection(case: ScanCase, *, frame: int = 0, window: float = 400,
         for second in range(first + 1, 8):
             if bin(first ^ second).count("1") == 1:
                 draw.line((*box_xy[first, :2], *box_xy[second, :2]), fill=(100, 120, 145, 150), width=1)
+    if show_branches:
+        flip = np.array([-1.0, -1.0, 1.0])
+        for branch in branches or []:
+            ostium = np.asarray(branch["ostium_xyz_mm"], dtype=float) * flip
+            seed = np.asarray(branch["seed_xyz_mm"], dtype=float) * flip
+            direction = np.asarray(branch["direction_xyz"], dtype=float) * flip
+            direction /= np.linalg.norm(direction)
+            radius = float(branch["radius_mm"])
+            arrow = seed + direction * max(2.0, radius * 1.5)
+            o, s, a = project(np.stack((ostium, seed, arrow)))
+            alpha = 255 if selected_branch is None or branch["instance_id"] == selected_branch else 90
+            draw.line((o[0], o[1], a[0], a[1]), fill=(84, 198, 211, alpha), width=3)
+            angle = np.arctan2(a[1] - s[1], a[0] - s[0])
+            wing = np.array([np.cos(angle), np.sin(angle)])
+            side = np.array([-wing[1], wing[0]])
+            draw.polygon([tuple(a[:2]), tuple(a[:2] - 10 * wing + 4 * side),
+                          tuple(a[:2] - 10 * wing - 4 * side)], fill=(84, 198, 211, alpha))
+            reference = np.eye(3)[np.argmin(np.abs(direction))]
+            u = np.cross(direction, reference)
+            u /= np.linalg.norm(u)
+            v = np.cross(direction, u)
+            angles = np.linspace(0, 2 * np.pi, 49)
+            ring = seed + radius * (np.cos(angles[:, None]) * u + np.sin(angles[:, None]) * v)
+            draw.line([tuple(point[:2]) for point in project(ring)],
+                      fill=(168, 233, 232, alpha), width=2, joint="curve")
+            for point, color, size in ((o, (109, 188, 232, alpha), 5),
+                                       (s, (168, 233, 232, alpha), 4)):
+                draw.ellipse((point[0] - size, point[1] - size,
+                              point[0] + size, point[1] + size), fill=color)
     output = BytesIO()
     canvas.save(output, format="PNG")
     return output.getvalue(), len(ct_points), len(mask_points)

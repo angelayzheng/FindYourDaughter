@@ -91,6 +91,9 @@ def render_3d(
     plane_opacity: float = 0.85,
     focus_mask: bool = False,
     slice_indices: tuple[int, int, int] | None = None,
+    branches: list[dict] | None = None,
+    show_branches: bool = True,
+    selected_branch: str | None = None,
     session: VTKRenderSession | None = None,
 ) -> bytes:
     """Return a VTK scene PNG, or raise VTKUnavailable for a safe fallback."""
@@ -105,6 +108,8 @@ def render_3d(
                     show_slices=show_slices, show_planes=show_planes,
                     plane_opacity=plane_opacity, focus_mask=focus_mask,
                     min_intensity=options.min_intensity,
+                    branches=branches or [], show_branches=show_branches,
+                    selected_branch=selected_branch,
                     slice_indices=slice_indices or tuple(size // 2 for size in case.image.shape[:3]))
     if session is not None:
         return session.render(settings)
@@ -229,6 +234,116 @@ def _configure_scene(viewer) -> None:
     viewer.window.SetOffScreenRendering(True)
 
 
+def _sync_branch_overlay(viewer, settings: dict) -> None:
+    """Draw evaluator branch measurements in the same RAS scene as the CT."""
+    import numpy as np
+    import vtk
+
+    branches = settings.get("branches") or []
+    key = json.dumps(branches, sort_keys=True)
+    if getattr(viewer, "_dashboard_branch_key", None) != key:
+        for group in getattr(viewer, "_dashboard_branch_actors", []):
+            for prop in group["props"]:
+                viewer.scene.RemoveViewProp(prop)
+        groups = []
+
+        def actor(source, color, *, width=2.5):
+            mapper = vtk.vtkPolyDataMapper()
+            mapper.SetInputConnection(source.GetOutputPort())
+            mapper.ScalarVisibilityOff()
+            prop = vtk.vtkActor()
+            prop.SetMapper(mapper)
+            prop.GetProperty().SetColor(*color)
+            prop.GetProperty().SetLineWidth(width)
+            prop.GetProperty().LightingOff()
+            viewer.scene.AddActor(prop)
+            return prop
+
+        def sphere(point, color, radius):
+            source = vtk.vtkSphereSource()
+            source.SetCenter(*point)
+            source.SetRadius(radius)
+            source.SetThetaResolution(16)
+            source.SetPhiResolution(12)
+            return actor(source, color)
+
+        for branch in branches:
+            flip = np.array([-1.0, -1.0, 1.0])
+            ostium = np.asarray(branch["ostium_xyz_mm"], dtype=float) * flip
+            seed = np.asarray(branch["seed_xyz_mm"], dtype=float) * flip
+            direction = np.asarray(branch["direction_xyz"], dtype=float) * flip
+            direction /= np.linalg.norm(direction)
+            radius = float(branch["radius_mm"])
+            arrow_tip = seed + direction * max(2.0, radius * 1.5)
+
+            path = vtk.vtkLineSource()
+            path.SetPoint1(*ostium)
+            path.SetPoint2(*arrow_tip)
+            props = [actor(path, (0.329, 0.776, 0.827), width=4),
+                     sphere(ostium, (0.427, 0.737, 0.910), 0.8),
+                     sphere(seed, (0.659, 0.914, 0.910), 0.55)]
+
+            cone = vtk.vtkConeSource()
+            cone.SetDirection(*direction)
+            cone.SetCenter(*(arrow_tip - direction * 0.9))
+            cone.SetHeight(1.8)
+            cone.SetRadius(0.7)
+            cone.SetResolution(16)
+            props.append(actor(cone, (0.329, 0.776, 0.827)))
+
+            reference = np.eye(3)[np.argmin(np.abs(direction))]
+            u = np.cross(direction, reference)
+            u /= np.linalg.norm(u)
+            v = np.cross(direction, u)
+            angles = np.linspace(0, 2 * np.pi, 49)
+            ring_points = seed + radius * (np.cos(angles[:, None]) * u + np.sin(angles[:, None]) * v)
+            points = vtk.vtkPoints()
+            for point in ring_points:
+                points.InsertNextPoint(*point)
+            line = vtk.vtkPolyLine()
+            line.GetPointIds().SetNumberOfIds(len(ring_points))
+            for index in range(len(ring_points)):
+                line.GetPointIds().SetId(index, index)
+            cells = vtk.vtkCellArray()
+            cells.InsertNextCell(line)
+            mesh = vtk.vtkPolyData()
+            mesh.SetPoints(points)
+            mesh.SetLines(cells)
+            mapper = vtk.vtkPolyDataMapper()
+            mapper.SetInputData(mesh)
+            ring = vtk.vtkActor()
+            ring.SetMapper(mapper)
+            ring.GetProperty().SetColor(0.659, 0.914, 0.910)
+            ring.GetProperty().SetLineWidth(2.5)
+            ring.GetProperty().LightingOff()
+            viewer.scene.AddActor(ring)
+            props.append(ring)
+
+            label = vtk.vtkBillboardTextActor3D()
+            label.SetInput(f"{branch['instance_id']} / r {radius:.2f} mm")
+            label.SetPosition(*seed)
+            label.SetDisplayOffset(10, 10)
+            label.GetTextProperty().SetColor(0.831, 0.961, 0.953)
+            label.GetTextProperty().SetFontSize(15)
+            viewer.scene.AddActor(label)
+            props.append(label)
+            groups.append({"id": branch["instance_id"], "props": props, "label": label})
+        viewer._dashboard_branch_key = key
+        viewer._dashboard_branch_actors = groups
+
+    visible = bool(settings.get("show_branches", True))
+    selected = settings.get("selected_branch")
+    for group in viewer._dashboard_branch_actors:
+        is_selected = selected is None or group["id"] == selected
+        for prop in group["props"]:
+            prop.SetVisibility(visible)
+            if prop is not group["label"]:
+                prop.GetProperty().SetOpacity(1.0 if is_selected else 0.35)
+        group["label"].SetVisibility(visible and is_selected)
+    if viewer.mask_actor is not None:
+        viewer.mask_actor.GetProperty().SetOpacity(0.45 if branches and visible else 1.0)
+
+
 def _apply_settings(viewer, settings: dict) -> None:
     show_slices = bool(settings["show_slices"])
     slices_were_visible = bool(viewer.slice_renderers[0].GetDraw())
@@ -266,6 +381,7 @@ def _apply_settings(viewer, settings: dict) -> None:
         viewer.indices[2] = slice_k
     else:
         viewer._update_clip()
+    _sync_branch_overlay(viewer, settings)
     viewer._reset_camera(focus_mask=bool(settings.get("focus_mask")))
     camera = viewer.scene.GetActiveCamera()
     camera.Azimuth(float(settings["azimuth"]))

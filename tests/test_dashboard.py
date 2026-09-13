@@ -93,13 +93,34 @@ class BrowserRenderTest(unittest.TestCase):
         case = ScanCase(Scan(np.zeros((16, 16, 16), dtype=np.float32),
                              ScanGeometry(np.eye(4), "mm"), source_path=Path("image.nii")))
         session = Session()
+        branch = {"instance_id": "branch_001", "ostium_xyz_mm": [-6., -6., 8.],
+                  "seed_xyz_mm": [-11., -6., 8.], "direction_xyz": [-1., 0., 0.],
+                  "radius_mm": 2.5}
         render_3d(case, VolumeViewOptions(max_dimension=16, min_intensity=110),
                   show_planes=True, show_slices=False, plane_opacity=.35,
-                  focus_mask=True, slice_indices=(3, 4, 5), session=session)
+                  focus_mask=True, slice_indices=(3, 4, 5), branches=[branch],
+                  selected_branch="branch_001", session=session)
         self.assertEqual(session.settings["min_intensity"], 110)
         self.assertEqual(session.settings["plane_opacity"], .35)
         self.assertTrue(session.settings["focus_mask"])
         self.assertEqual(session.settings["slice_indices"], (3, 4, 5))
+        self.assertEqual(session.settings["branches"], [branch])
+        self.assertEqual(session.settings["selected_branch"], "branch_001")
+
+    def test_cpu_fallback_draws_branch_measurement_glyphs(self):
+        import numpy as np
+        from core import Scan, ScanCase, ScanGeometry
+        from frontend.point_cloud import render_projection
+
+        data = np.zeros((24, 24, 24), dtype=np.float32)
+        case = ScanCase(Scan(data, ScanGeometry(np.eye(4), "mm")))
+        branch = {"instance_id": "branch_001", "ostium_xyz_mm": [-7., -8., 10.],
+                  "seed_xyz_mm": [-12., -8., 10.], "direction_xyz": [-1., 0., 0.],
+                  "radius_mm": 2.5}
+        plain, _, _ = render_projection(case, show_volume=False, show_mask=False)
+        marked, _, _ = render_projection(case, show_volume=False, show_mask=False,
+                                         branches=[branch])
+        self.assertNotEqual(plain, marked)
 
     def test_fallback_points_use_physical_affine_and_mask(self):
         import numpy as np
@@ -165,11 +186,20 @@ class BrowserRenderTest(unittest.TestCase):
             image = np.asarray(Image.open(BytesIO(png)).convert("RGB"))
             self.assertGreater(np.count_nonzero((image[..., 0] > 150) &
                                                 (image[..., 0] > image[..., 1] * 2)), 100)
+            branch = {"instance_id": "branch_001", "ostium_xyz_mm": [-8., -8., 8.],
+                      "seed_xyz_mm": [-12., -8., 8.], "direction_xyz": [-1., 0., 0.],
+                      "radius_mm": 2.0}
+            overlay_png = render_3d(case, VolumeViewOptions(max_dimension=16),
+                                    show_volume=False, show_mask=False, branches=[branch])
+            overlay = np.asarray(Image.open(BytesIO(overlay_png)).convert("RGB"))
+            self.assertGreater(np.count_nonzero((overlay[..., 2] > 150) &
+                                                (overlay[..., 2] > overlay[..., 0] * 1.2)), 20)
 
     @unittest.skipUnless(sys.platform == "win32", "Bundled software OpenGL targets Windows x64")
     def test_vtk_session_reuses_scene_and_redraws_camera(self):
         import nibabel as nib
         import numpy as np
+        from PIL import Image
         from core import Scan, ScanCase, ScanGeometry, VolumeViewOptions
         from frontend.render import VTKRenderSession, probe_vtk, render_3d
 
@@ -196,10 +226,22 @@ class BrowserRenderTest(unittest.TestCase):
                 planes_only = render_3d(case, options, show_slices=False, show_planes=True,
                                         plane_opacity=.35, slice_indices=(12, 12, 22),
                                         session=session)
+                branch = {"instance_id": "branch_001", "ostium_xyz_mm": [-8., -8., 8.],
+                          "seed_xyz_mm": [-12., -8., 8.], "direction_xyz": [-1., 0., 0.],
+                          "radius_mm": 2.0}
+                with_branch = render_3d(case, options, show_volume=False,
+                                        branches=[branch], session=session)
+                without_branch = render_3d(case, options, show_volume=False,
+                                           branches=[branch], show_branches=False,
+                                           session=session)
                 self.assertEqual(session._process.pid, pid)
                 self.assertNotEqual(first, second)
                 self.assertNotEqual(slices, moved)
                 self.assertNotEqual(first, planes_only)
+                self.assertNotEqual(with_branch, without_branch)
+                image = np.asarray(Image.open(BytesIO(with_branch)).convert("RGB"))
+                self.assertGreater(np.count_nonzero((image[..., 2] > 150) &
+                                                    (image[..., 2] > image[..., 0] * 1.2)), 20)
             finally:
                 session.close()
 

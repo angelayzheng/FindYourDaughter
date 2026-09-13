@@ -55,6 +55,9 @@ def prepare_view(
     plane_opacity: float,
     focus_mask: bool,
     slice_indices: tuple[int, int, int],
+    branches: list[dict],
+    show_branches: bool,
+    selected_branch: str | None,
     session: VTKRenderSession | None,
 ) -> tuple[bytes, str, str, tuple[int, int] | None, VTKRenderSession | None]:
     """Render the native VTK scene or a safe CPU projection fallback."""
@@ -80,6 +83,9 @@ def prepare_view(
             plane_opacity=plane_opacity,
             focus_mask=focus_mask,
             slice_indices=slice_indices,
+            branches=branches,
+            show_branches=show_branches,
+            selected_branch=selected_branch,
             session=session,
         )
         return png, "VTK volume", "", None, session
@@ -95,6 +101,9 @@ def prepare_view(
             show_mask=show_mask,
             azimuth=azimuth,
             elevation=elevation,
+            branches=branches,
+            show_branches=show_branches,
+            selected_branch=selected_branch,
         )
         return png, "CPU preview", str(error), (ct_count, mask_count), None
 
@@ -361,7 +370,7 @@ elif panel == "Detailed View":
             elevation = st.slider("Elevation (degrees)", -90, 90, 25)
             zoom = st.slider("Zoom", 0.5, 2.5, 1.0, 0.1)
             focus_mask = st.checkbox(
-                "Focus camera on aorta", False, disabled=case.mask is None
+                "Focus camera on aorta", bool(daughters), disabled=case.mask is None
             )
         with st.expander("05 · CROSS-SECTIONS", expanded=True):
             show_slices = st.checkbox("Show three orthogonal slice panels", True)
@@ -399,6 +408,9 @@ elif panel == "Detailed View":
         case_key = (image, mask, image_mtime, mask_mtime)
         view_key = (
             case_key,
+            detector,
+            selected_branch,
+            show_branches,
             frame,
             window,
             level,
@@ -453,6 +465,9 @@ elif panel == "Detailed View":
                         plane_opacity=plane_opacity,
                         focus_mask=focus_mask,
                         slice_indices=slice_indices,
+                        branches=daughters,
+                        show_branches=show_branches,
+                        selected_branch=selected_branch,
                         session=st.session_state.get("vtk_session"),
                     )
                     while not pending.done():
@@ -491,6 +506,11 @@ elif panel == "Detailed View":
                     f"VTK unavailable: {st.session_state['fallback_reason']} CPU preview shown."
                 )
             st.image(st.session_state["preview_png"], width="stretch")
+            if show_branches and daughters:
+                st.caption(
+                    "Blue dot: ostium · Teal arrow: direction · Pale teal ring: estimated radius. "
+                    "The markers show candidate measurements, not a segmented branch surface."
+                )
             st.download_button(
                 "Save PNG",
                 st.session_state["preview_png"],
