@@ -100,7 +100,7 @@ def create_body_like_volume(
     rng: np.random.Generator,
     noise_std: float,
 ) -> np.ndarray:
-    """Create a smooth torso cross-section with tissue-specific CT texture."""
+    """Create a level-dependent torso cross-section with CT-like tissue texture."""
     nz, ny, nx = shape_zyx
     physical_size = np.asarray((nx, ny, nz), dtype=float) * spacing_xyz_mm
     x = (np.arange(nx, dtype=float) + 0.5) * spacing_xyz_mm[0]
@@ -110,49 +110,94 @@ def create_body_like_volume(
     image = np.full(shape_zyx, -2048.0, dtype=np.float32)
     tissue = np.zeros(shape_zyx, dtype=np.uint8)
 
+    def ellipse(center: tuple[float, float], radii: tuple[float, float]) -> np.ndarray:
+        return (((xx - center[0]) / radii[0]) ** 2
+                + ((yy - center[1]) / radii[1]) ** 2) <= 1.0
+
+    def assign(mask: np.ndarray, value: float, tissue_class: int) -> None:
+        mask &= body
+        image[z_index, mask] = value
+        tissue[z_index, mask] = tissue_class
+
     for z_index in range(nz):
         fraction = (z_index + 0.5) / nz
-        taper = 0.90 + 0.08 * np.sin(np.pi * fraction)
-        body_x = physical_size[0] * 0.43 * taper
-        body_y = physical_size[1] * 0.46 * taper
+        thoracic = fraction < 0.48
+        taper = 0.88 + 0.10 * np.sin(np.pi * fraction)
+        body_x = physical_size[0] * (0.41 if thoracic else 0.44) * taper
+        body_y = physical_size[1] * (0.44 if thoracic else 0.47) * taper
         body_center = np.array([
-            center_x + 2.0 * np.sin(2 * np.pi * fraction + 0.4),
-            center_y + 2.5 * np.sin(np.pi * fraction),
+            center_x + 2.5 * np.sin(2 * np.pi * fraction + 0.4),
+            center_y + 2.0 * np.sin(np.pi * fraction),
         ])
         body = (((xx - body_center[0]) / body_x) ** 2
                 + ((yy - body_center[1]) / body_y) ** 2) <= 1.0
-        image[z_index, body] = 35.0
+        image[z_index, body] = 45.0 if thoracic else 65.0
         tissue[z_index, body] = 1
 
-        lung_offset = physical_size[0] * 0.19
-        lung_x_radius = physical_size[0] * 0.125
-        lung_y_radius = physical_size[1] * 0.25
-        for lung_center_x in (body_center[0] - lung_offset, body_center[0] + lung_offset):
-            lung = (((xx - lung_center_x) / lung_x_radius) ** 2
-                    + ((yy - (body_center[1] - physical_size[1] * 0.035)) / lung_y_radius) ** 2) <= 1.0
-            lung &= body
-            image[z_index, lung] = -720.0
-            tissue[z_index, lung] = 2
+        # Subcutaneous fat and a thinner muscular ring provide a nonuniform body wall.
+        inner_body = ellipse(tuple(body_center), (body_x * 0.82, body_y * 0.84))
+        fat = body & ~inner_body
+        image[z_index, fat] = -95.0
+        tissue[z_index, fat] = 4
+        muscle = body & ~ellipse(tuple(body_center), (body_x * 0.91, body_y * 0.91))
+        image[z_index, muscle] = 55.0
+        tissue[z_index, muscle] = 5
 
-        spine = (((xx - body_center[0]) / (physical_size[0] * 0.075)) ** 2
-                  + ((yy - (body_center[1] + physical_size[1] * 0.22)) / (physical_size[1] * 0.085)) ** 2) <= 1.0
-        spine &= body
-        image[z_index, spine] = 650.0
-        tissue[z_index, spine] = 3
+        posterior = body_center[1] + physical_size[1] * 0.22
+        spine = ellipse((body_center[0], posterior),
+                        (physical_size[0] * 0.070, physical_size[1] * 0.080))
+        assign(spine, 650.0, 3)
+        canal = ellipse((body_center[0], posterior - physical_size[1] * 0.015),
+                        (physical_size[0] * 0.026, physical_size[1] * 0.030))
+        assign(canal, 40.0, 1)
+
+        if thoracic:
+            lung_offset = physical_size[0] * 0.19
+            lung_radii = (physical_size[0] * 0.13, physical_size[1] * 0.235)
+            for lung_center_x in (body_center[0] - lung_offset, body_center[0] + lung_offset):
+                lung = ellipse((lung_center_x, body_center[1] - physical_size[1] * 0.035), lung_radii)
+                assign(lung, -780.0, 2)
+
+            # Curved high-density ribs are represented by smooth elliptical arcs.
+            rib_outer = ellipse(tuple(body_center), (body_x * 0.91, body_y * 0.88))
+            rib_inner = ellipse(tuple(body_center), (body_x * 0.86, body_y * 0.83))
+            assign(rib_outer & ~rib_inner, 480.0, 3)
+        else:
+            liver = ellipse((body_center[0] + physical_size[0] * 0.13,
+                             body_center[1] - physical_size[1] * 0.05),
+                            (physical_size[0] * 0.19, physical_size[1] * 0.22))
+            assign(liver, 75.0, 6)
+            spleen = ellipse((body_center[0] - physical_size[0] * 0.19,
+                              body_center[1] - physical_size[1] * 0.04),
+                             (physical_size[0] * 0.09, physical_size[1] * 0.14))
+            assign(spleen, 95.0, 6)
+            kidney_radii = (physical_size[0] * 0.065, physical_size[1] * 0.11)
+            for kidney_center_x in (body_center[0] - physical_size[0] * 0.12,
+                                    body_center[0] + physical_size[0] * 0.12):
+                assign(ellipse((kidney_center_x, body_center[1] + physical_size[1] * 0.06), kidney_radii), 45.0, 1)
+
+            bowel = ellipse((body_center[0], body_center[1] - physical_size[1] * 0.02),
+                            (physical_size[0] * 0.18, physical_size[1] * 0.13))
+            assign(bowel, 5.0, 7)
+
+        # A small smooth body-motion field prevents perfectly identical axial slices.
+        slice_bias = 3.5 * np.sin(2 * np.pi * fraction * 1.7 + 0.5)
+        image[z_index, body] += slice_bias
 
     if noise_std <= 0:
         return image
 
     # Low-frequency scanner/body variation plus tissue-dependent quantum noise.
-    smooth_noise = gaussian_filter(rng.normal(size=shape_zyx), sigma=(4.0, 3.0, 3.0), mode="reflect")
+    smooth_noise = gaussian_filter(rng.normal(size=shape_zyx), sigma=(3.0, 2.5, 2.5), mode="reflect")
     smooth_noise /= max(float(smooth_noise.std()), 1e-6)
-    image += (smooth_noise * noise_std * 0.7).astype(np.float32)
+    image += (smooth_noise * noise_std * 0.9).astype(np.float32)
     tissue_noise = np.select(
-        [tissue == 0, tissue == 1, tissue == 2, tissue == 3],
-        [1.0, 1.35, 1.8, 2.2],
+        [tissue == 0, tissue == 1, tissue == 2, tissue == 3,
+         tissue == 4, tissue == 5, tissue == 6, tissue == 7],
+        [0.8, 1.2, 1.6, 2.0, 1.0, 1.3, 1.15, 1.5],
         default=1.0,
     )
-    image += (rng.normal(size=shape_zyx) * noise_std * tissue_noise).astype(np.float32)
+    image += (rng.normal(size=shape_zyx) * noise_std * 1.25 * tissue_noise).astype(np.float32)
     return image
 
 

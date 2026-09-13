@@ -6,21 +6,27 @@
     "mask": "dataset/subject001/mask1.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 681.585,
-        "elapsed_seconds": 0.681585,
+        "elapsed_ms": 1162.073,
+        "elapsed_seconds": 1.162073,
         "daughters": 6,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 435.081,
-        "elapsed_seconds": 0.435081,
+        "elapsed_ms": 780.166,
+        "elapsed_seconds": 0.780166,
         "daughters": 2,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 914.636,
-        "elapsed_seconds": 0.914636,
+        "elapsed_ms": 1631.701,
+        "elapsed_seconds": 1.631701,
         "daughters": 7,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 1463.775,
+        "elapsed_seconds": 1.463775,
+        "daughters": 5,
         "error": ""
       }
     }
@@ -32,20 +38,26 @@
     "mask": "dataset/subject002/mask2.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 549.747,
-        "elapsed_seconds": 0.549747,
+        "elapsed_ms": 911.805,
+        "elapsed_seconds": 0.911805,
         "daughters": 4,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 716.093,
-        "elapsed_seconds": 0.716093,
+        "elapsed_ms": 1285.886,
+        "elapsed_seconds": 1.285886,
         "daughters": 4,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1403.246,
-        "elapsed_seconds": 1.403246,
+        "elapsed_ms": 2528.417,
+        "elapsed_seconds": 2.528417,
+        "daughters": 4,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2455.246,
+        "elapsed_seconds": 2.455246,
         "daughters": 4,
         "error": ""
       }
@@ -58,20 +70,26 @@
     "mask": "dataset/subject003/mask3.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 935.675,
-        "elapsed_seconds": 0.935675,
+        "elapsed_ms": 1605.605,
+        "elapsed_seconds": 1.605605,
         "daughters": 3,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 1157.924,
-        "elapsed_seconds": 1.157924,
+        "elapsed_ms": 2030.514,
+        "elapsed_seconds": 2.030514,
         "daughters": 6,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 2214.771,
-        "elapsed_seconds": 2.214771,
+        "elapsed_ms": 4146.13,
+        "elapsed_seconds": 4.14613,
+        "daughters": 6,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 3980.524,
+        "elapsed_seconds": 3.980524,
         "daughters": 6,
         "error": ""
       }
@@ -84,20 +102,26 @@
     "mask": "dataset/subject004/mask4.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 595.181,
-        "elapsed_seconds": 0.595181,
+        "elapsed_ms": 1033.495,
+        "elapsed_seconds": 1.033495,
         "daughters": 4,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 871.591,
-        "elapsed_seconds": 0.871591,
+        "elapsed_ms": 1518.854,
+        "elapsed_seconds": 1.518854,
         "daughters": 6,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1635.398,
-        "elapsed_seconds": 1.635398,
+        "elapsed_ms": 2899.01,
+        "elapsed_seconds": 2.89901,
+        "daughters": 7,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2894.474,
+        "elapsed_seconds": 2.894474,
         "daughters": 7,
         "error": ""
       }
@@ -110,20 +134,26 @@
     "mask": "dataset/subject005/mask5.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 436.951,
-        "elapsed_seconds": 0.436951,
+        "elapsed_ms": 716.394,
+        "elapsed_seconds": 0.716394,
         "daughters": 6,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 565.711,
-        "elapsed_seconds": 0.565711,
+        "elapsed_ms": 955.535,
+        "elapsed_seconds": 0.955535,
         "daughters": 6,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1113.847,
-        "elapsed_seconds": 1.113847,
+        "elapsed_ms": 1888.182,
+        "elapsed_seconds": 1.888182,
+        "daughters": 8,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 1872.488,
+        "elapsed_seconds": 1.872488,
         "daughters": 8,
         "error": ""
       }
@@ -136,21 +166,27 @@
     "mask": "dataset/subject006/mask6.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 799.803,
-        "elapsed_seconds": 0.799803,
+        "elapsed_ms": 1235.136,
+        "elapsed_seconds": 1.235136,
         "daughters": 3,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 1076.339,
-        "elapsed_seconds": 1.076339,
+        "elapsed_ms": 1790.139,
+        "elapsed_seconds": 1.790139,
         "daughters": 6,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 2115.284,
-        "elapsed_seconds": 2.115284,
+        "elapsed_ms": 3555.025,
+        "elapsed_seconds": 3.555025,
         "daughters": 8,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 3501.084,
+        "elapsed_seconds": 3.501084,
+        "daughters": 7,
         "error": ""
       }
     }
@@ -162,21 +198,27 @@
     "mask": "dataset/subject007/mask7.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 331.314,
-        "elapsed_seconds": 0.331314,
+        "elapsed_ms": 517.874,
+        "elapsed_seconds": 0.517874,
         "daughters": 6,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 429.598,
-        "elapsed_seconds": 0.429598,
+        "elapsed_ms": 721.782,
+        "elapsed_seconds": 0.721782,
         "daughters": 0,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 837.539,
-        "elapsed_seconds": 0.837539,
+        "elapsed_ms": 1420.313,
+        "elapsed_seconds": 1.420313,
         "daughters": 6,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 1439.167,
+        "elapsed_seconds": 1.439167,
+        "daughters": 3,
         "error": ""
       }
     }
@@ -188,20 +230,26 @@
     "mask": "dataset/subject008/mask8.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 1192.615,
-        "elapsed_seconds": 1.192615,
+        "elapsed_ms": 2066.905,
+        "elapsed_seconds": 2.066905,
         "daughters": 4,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 1595.976,
-        "elapsed_seconds": 1.595976,
+        "elapsed_ms": 2983.94,
+        "elapsed_seconds": 2.98394,
         "daughters": 6,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 3063.073,
-        "elapsed_seconds": 3.063073,
+        "elapsed_ms": 5175.811,
+        "elapsed_seconds": 5.175811,
+        "daughters": 7,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 5149.112,
+        "elapsed_seconds": 5.149112,
         "daughters": 7,
         "error": ""
       }
@@ -214,20 +262,26 @@
     "mask": "dataset/subject009/mask9.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 501.45,
-        "elapsed_seconds": 0.50145,
+        "elapsed_ms": 913.589,
+        "elapsed_seconds": 0.913589,
         "daughters": 4,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 669.365,
-        "elapsed_seconds": 0.669365,
+        "elapsed_ms": 1133.08,
+        "elapsed_seconds": 1.13308,
         "daughters": 8,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1303.748,
-        "elapsed_seconds": 1.303748,
+        "elapsed_ms": 2215.915,
+        "elapsed_seconds": 2.215915,
+        "daughters": 8,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2223.265,
+        "elapsed_seconds": 2.223265,
         "daughters": 8,
         "error": ""
       }
@@ -240,20 +294,26 @@
     "mask": "dataset/subject010/mask10.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 677.15,
-        "elapsed_seconds": 0.67715,
+        "elapsed_ms": 1161.264,
+        "elapsed_seconds": 1.161264,
         "daughters": 3,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 892.083,
-        "elapsed_seconds": 0.892083,
+        "elapsed_ms": 1546.823,
+        "elapsed_seconds": 1.546823,
         "daughters": 5,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1734.006,
-        "elapsed_seconds": 1.734006,
+        "elapsed_ms": 2900.319,
+        "elapsed_seconds": 2.900319,
+        "daughters": 6,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 3388.669,
+        "elapsed_seconds": 3.388669,
         "daughters": 6,
         "error": ""
       }
@@ -266,20 +326,26 @@
     "mask": "dataset/subject011/mask11.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 385.908,
-        "elapsed_seconds": 0.385908,
+        "elapsed_ms": 711.535,
+        "elapsed_seconds": 0.711535,
         "daughters": 5,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 498.971,
-        "elapsed_seconds": 0.498971,
+        "elapsed_ms": 846.78,
+        "elapsed_seconds": 0.84678,
         "daughters": 6,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 983.439,
-        "elapsed_seconds": 0.983439,
+        "elapsed_ms": 1643.396,
+        "elapsed_seconds": 1.643396,
+        "daughters": 9,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 1665.238,
+        "elapsed_seconds": 1.665238,
         "daughters": 9,
         "error": ""
       }
@@ -292,21 +358,27 @@
     "mask": "dataset/subject012/mask12.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 563.69,
-        "elapsed_seconds": 0.56369,
+        "elapsed_ms": 1043.474,
+        "elapsed_seconds": 1.043474,
         "daughters": 5,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 646.13,
-        "elapsed_seconds": 0.64613,
+        "elapsed_ms": 1102.293,
+        "elapsed_seconds": 1.102293,
         "daughters": 6,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1287.299,
-        "elapsed_seconds": 1.287299,
+        "elapsed_ms": 2192.449,
+        "elapsed_seconds": 2.192449,
         "daughters": 6,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2182.887,
+        "elapsed_seconds": 2.182887,
+        "daughters": 5,
         "error": ""
       }
     }
@@ -318,20 +390,26 @@
     "mask": "dataset/subject013/mask13.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 389.469,
-        "elapsed_seconds": 0.389469,
+        "elapsed_ms": 607.744,
+        "elapsed_seconds": 0.607744,
         "daughters": 8,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 465.117,
-        "elapsed_seconds": 0.465117,
+        "elapsed_ms": 781.282,
+        "elapsed_seconds": 0.781282,
         "daughters": 7,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 912.828,
-        "elapsed_seconds": 0.912828,
+        "elapsed_ms": 1557.396,
+        "elapsed_seconds": 1.557396,
+        "daughters": 11,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 1517.804,
+        "elapsed_seconds": 1.517804,
         "daughters": 11,
         "error": ""
       }
@@ -344,20 +422,26 @@
     "mask": "dataset/subject014/mask14.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 571.275,
-        "elapsed_seconds": 0.571275,
+        "elapsed_ms": 831.491,
+        "elapsed_seconds": 0.831491,
         "daughters": 5,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 719.814,
-        "elapsed_seconds": 0.719814,
+        "elapsed_ms": 1240.173,
+        "elapsed_seconds": 1.240173,
         "daughters": 4,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1367.45,
-        "elapsed_seconds": 1.36745,
+        "elapsed_ms": 2352.047,
+        "elapsed_seconds": 2.352047,
+        "daughters": 5,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2324.952,
+        "elapsed_seconds": 2.324952,
         "daughters": 5,
         "error": ""
       }
@@ -370,21 +454,27 @@
     "mask": "dataset/subject015/mask15.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 765.859,
-        "elapsed_seconds": 0.765859,
+        "elapsed_ms": 1183.713,
+        "elapsed_seconds": 1.183713,
         "daughters": 6,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 1012.898,
-        "elapsed_seconds": 1.012898,
+        "elapsed_ms": 1689.17,
+        "elapsed_seconds": 1.68917,
         "daughters": 8,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1987.744,
-        "elapsed_seconds": 1.987744,
+        "elapsed_ms": 3364.989,
+        "elapsed_seconds": 3.364989,
         "daughters": 11,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 3312.567,
+        "elapsed_seconds": 3.312567,
+        "daughters": 10,
         "error": ""
       }
     }
@@ -396,21 +486,27 @@
     "mask": "dataset/subject016/mask16.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 218.718,
-        "elapsed_seconds": 0.218718,
+        "elapsed_ms": 375.177,
+        "elapsed_seconds": 0.375177,
         "daughters": 5,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 321.91,
-        "elapsed_seconds": 0.32191,
+        "elapsed_ms": 575.131,
+        "elapsed_seconds": 0.575131,
         "daughters": 0,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 528.058,
-        "elapsed_seconds": 0.528058,
+        "elapsed_ms": 936.509,
+        "elapsed_seconds": 0.936509,
         "daughters": 5,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 915.928,
+        "elapsed_seconds": 0.915928,
+        "daughters": 3,
         "error": ""
       }
     }
@@ -422,21 +518,27 @@
     "mask": "dataset/subject017/mask17.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 104.947,
-        "elapsed_seconds": 0.104947,
+        "elapsed_ms": 193.139,
+        "elapsed_seconds": 0.193139,
         "daughters": 0,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 110.502,
-        "elapsed_seconds": 0.110502,
+        "elapsed_ms": 207.181,
+        "elapsed_seconds": 0.207181,
         "daughters": 1,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 142.276,
-        "elapsed_seconds": 0.142276,
+        "elapsed_ms": 258.561,
+        "elapsed_seconds": 0.258561,
         "daughters": 1,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 270.268,
+        "elapsed_seconds": 0.270268,
+        "daughters": 0,
         "error": ""
       }
     }
@@ -448,21 +550,27 @@
     "mask": "dataset/subject018/mask18.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 872.102,
-        "elapsed_seconds": 0.872102,
+        "elapsed_ms": 1519.95,
+        "elapsed_seconds": 1.51995,
         "daughters": 9,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 1381.647,
-        "elapsed_seconds": 1.381647,
+        "elapsed_ms": 2545.65,
+        "elapsed_seconds": 2.54565,
         "daughters": 2,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 2290.035,
-        "elapsed_seconds": 2.290035,
+        "elapsed_ms": 3961.981,
+        "elapsed_seconds": 3.961981,
         "daughters": 10,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 4191.807,
+        "elapsed_seconds": 4.191807,
+        "daughters": 8,
         "error": ""
       }
     }
@@ -474,20 +582,26 @@
     "mask": "dataset/subject019/mask19.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 123.732,
-        "elapsed_seconds": 0.123732,
+        "elapsed_ms": 205.441,
+        "elapsed_seconds": 0.205441,
         "daughters": 0,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 110.654,
-        "elapsed_seconds": 0.110654,
+        "elapsed_ms": 200.067,
+        "elapsed_seconds": 0.200067,
         "daughters": 1,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 151.252,
-        "elapsed_seconds": 0.151252,
+        "elapsed_ms": 272.057,
+        "elapsed_seconds": 0.272057,
+        "daughters": 1,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 275.903,
+        "elapsed_seconds": 0.275903,
         "daughters": 1,
         "error": ""
       }
@@ -500,21 +614,27 @@
     "mask": "dataset/subject020/mask20.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 140.568,
-        "elapsed_seconds": 0.140568,
+        "elapsed_ms": 253.521,
+        "elapsed_seconds": 0.253521,
         "daughters": 0,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 150.422,
-        "elapsed_seconds": 0.150422,
+        "elapsed_ms": 277.991,
+        "elapsed_seconds": 0.277991,
         "daughters": 1,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 202.761,
-        "elapsed_seconds": 0.202761,
+        "elapsed_ms": 364.374,
+        "elapsed_seconds": 0.364374,
         "daughters": 1,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 397.037,
+        "elapsed_seconds": 0.397037,
+        "daughters": 2,
         "error": ""
       }
     }
@@ -526,20 +646,26 @@
     "mask": "dataset/subject021/mask21.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 132.347,
-        "elapsed_seconds": 0.132347,
+        "elapsed_ms": 228.095,
+        "elapsed_seconds": 0.228095,
         "daughters": 2,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 165.068,
-        "elapsed_seconds": 0.165068,
+        "elapsed_ms": 297.167,
+        "elapsed_seconds": 0.297167,
         "daughters": 6,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 269.34,
-        "elapsed_seconds": 0.26934,
+        "elapsed_ms": 467.638,
+        "elapsed_seconds": 0.467638,
+        "daughters": 7,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 473.463,
+        "elapsed_seconds": 0.473463,
         "daughters": 7,
         "error": ""
       }
@@ -552,21 +678,27 @@
     "mask": "dataset/subject022/mask22.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 244.538,
-        "elapsed_seconds": 0.244538,
+        "elapsed_ms": 553.308,
+        "elapsed_seconds": 0.553308,
         "daughters": 5,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 294.73,
-        "elapsed_seconds": 0.29473,
+        "elapsed_ms": 543.832,
+        "elapsed_seconds": 0.543832,
         "daughters": 7,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 487.955,
-        "elapsed_seconds": 0.487955,
+        "elapsed_ms": 838.327,
+        "elapsed_seconds": 0.838327,
         "daughters": 9,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 876.672,
+        "elapsed_seconds": 0.876672,
+        "daughters": 6,
         "error": ""
       }
     }
@@ -578,20 +710,26 @@
     "mask": "dataset/subject023/mask23.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 95.308,
-        "elapsed_seconds": 0.095308,
+        "elapsed_ms": 170.401,
+        "elapsed_seconds": 0.170401,
         "daughters": 1,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 102.999,
-        "elapsed_seconds": 0.102999,
+        "elapsed_ms": 189.568,
+        "elapsed_seconds": 0.189568,
         "daughters": 1,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 143.184,
-        "elapsed_seconds": 0.143184,
+        "elapsed_ms": 254.915,
+        "elapsed_seconds": 0.254915,
+        "daughters": 1,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 255.734,
+        "elapsed_seconds": 0.255734,
         "daughters": 1,
         "error": ""
       }
@@ -604,21 +742,27 @@
     "mask": "dataset/subject024/mask24.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 226.685,
-        "elapsed_seconds": 0.226685,
+        "elapsed_ms": 379.587,
+        "elapsed_seconds": 0.379587,
         "daughters": 7,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 348.993,
-        "elapsed_seconds": 0.348993,
+        "elapsed_ms": 607.222,
+        "elapsed_seconds": 0.607222,
         "daughters": 0,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 566.849,
-        "elapsed_seconds": 0.566849,
+        "elapsed_ms": 980.013,
+        "elapsed_seconds": 0.980013,
         "daughters": 6,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 975.571,
+        "elapsed_seconds": 0.975571,
+        "daughters": 5,
         "error": ""
       }
     }
@@ -630,21 +774,27 @@
     "mask": "dataset/subject025/mask25.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 628.549,
-        "elapsed_seconds": 0.628549,
+        "elapsed_ms": 1058.572,
+        "elapsed_seconds": 1.058572,
         "daughters": 10,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 773.195,
-        "elapsed_seconds": 0.773195,
+        "elapsed_ms": 1368.159,
+        "elapsed_seconds": 1.368159,
         "daughters": 5,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1441.64,
-        "elapsed_seconds": 1.44164,
+        "elapsed_ms": 2492.031,
+        "elapsed_seconds": 2.492031,
         "daughters": 12,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2467.894,
+        "elapsed_seconds": 2.467894,
+        "daughters": 10,
         "error": ""
       }
     }
@@ -656,20 +806,26 @@
     "mask": "synthetic_dataset/subject001/mask1.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 620.525,
-        "elapsed_seconds": 0.620525,
-        "daughters": 2,
+        "elapsed_ms": 986.723,
+        "elapsed_seconds": 0.986723,
+        "daughters": 3,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 820.92,
-        "elapsed_seconds": 0.82092,
-        "daughters": 2,
+        "elapsed_ms": 1393.505,
+        "elapsed_seconds": 1.393505,
+        "daughters": 3,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1631.733,
-        "elapsed_seconds": 1.631733,
+        "elapsed_ms": 2858.709,
+        "elapsed_seconds": 2.858709,
+        "daughters": 3,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2764.803,
+        "elapsed_seconds": 2.764803,
         "daughters": 3,
         "error": ""
       }
@@ -682,20 +838,26 @@
     "mask": "synthetic_dataset/subject002/mask2.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 653.508,
-        "elapsed_seconds": 0.653508,
+        "elapsed_ms": 1060.09,
+        "elapsed_seconds": 1.06009,
         "daughters": 3,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 872.24,
-        "elapsed_seconds": 0.87224,
+        "elapsed_ms": 1545.785,
+        "elapsed_seconds": 1.545785,
         "daughters": 3,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1756.189,
-        "elapsed_seconds": 1.756189,
+        "elapsed_ms": 2922.451,
+        "elapsed_seconds": 2.922451,
+        "daughters": 3,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2966.532,
+        "elapsed_seconds": 2.966532,
         "daughters": 3,
         "error": ""
       }
@@ -708,20 +870,26 @@
     "mask": "synthetic_dataset/subject003/mask3.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 711.835,
-        "elapsed_seconds": 0.711835,
+        "elapsed_ms": 1148.864,
+        "elapsed_seconds": 1.148864,
         "daughters": 2,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 952.312,
-        "elapsed_seconds": 0.952312,
+        "elapsed_ms": 1606.351,
+        "elapsed_seconds": 1.606351,
         "daughters": 2,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1894.095,
-        "elapsed_seconds": 1.894095,
+        "elapsed_ms": 3257.37,
+        "elapsed_seconds": 3.25737,
+        "daughters": 2,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 3232.354,
+        "elapsed_seconds": 3.232354,
         "daughters": 2,
         "error": ""
       }
@@ -734,20 +902,26 @@
     "mask": "synthetic_dataset/subject004/mask4.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 647.727,
-        "elapsed_seconds": 0.647727,
+        "elapsed_ms": 1120.384,
+        "elapsed_seconds": 1.120384,
         "daughters": 1,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 861.796,
-        "elapsed_seconds": 0.861796,
+        "elapsed_ms": 1508.995,
+        "elapsed_seconds": 1.508995,
         "daughters": 1,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1717.583,
-        "elapsed_seconds": 1.717583,
+        "elapsed_ms": 2942.996,
+        "elapsed_seconds": 2.942996,
+        "daughters": 1,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2919.165,
+        "elapsed_seconds": 2.919165,
         "daughters": 1,
         "error": ""
       }
@@ -760,20 +934,26 @@
     "mask": "synthetic_dataset/subject005/mask5.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 640.056,
-        "elapsed_seconds": 0.640056,
+        "elapsed_ms": 1030.366,
+        "elapsed_seconds": 1.030366,
         "daughters": 3,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 873.423,
-        "elapsed_seconds": 0.873423,
+        "elapsed_ms": 1468.09,
+        "elapsed_seconds": 1.46809,
         "daughters": 3,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1744.313,
-        "elapsed_seconds": 1.744313,
+        "elapsed_ms": 2951.86,
+        "elapsed_seconds": 2.95186,
+        "daughters": 3,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2954.495,
+        "elapsed_seconds": 2.954495,
         "daughters": 3,
         "error": ""
       }
@@ -786,20 +966,26 @@
     "mask": "synthetic_dataset/subject006/mask6.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 685.99,
-        "elapsed_seconds": 0.68599,
+        "elapsed_ms": 1107.05,
+        "elapsed_seconds": 1.10705,
         "daughters": 2,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 910.154,
-        "elapsed_seconds": 0.910154,
+        "elapsed_ms": 1561.129,
+        "elapsed_seconds": 1.561129,
         "daughters": 2,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1821.322,
-        "elapsed_seconds": 1.821322,
+        "elapsed_ms": 3121.769,
+        "elapsed_seconds": 3.121769,
+        "daughters": 2,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 3107.618,
+        "elapsed_seconds": 3.107618,
         "daughters": 2,
         "error": ""
       }
@@ -812,20 +998,26 @@
     "mask": "synthetic_dataset/subject007/mask7.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 616.089,
-        "elapsed_seconds": 0.616089,
+        "elapsed_ms": 998.405,
+        "elapsed_seconds": 0.998405,
         "daughters": 4,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 841.06,
-        "elapsed_seconds": 0.84106,
-        "daughters": 4,
+        "elapsed_ms": 1452.93,
+        "elapsed_seconds": 1.45293,
+        "daughters": 3,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1685.634,
-        "elapsed_seconds": 1.685634,
+        "elapsed_ms": 2913.614,
+        "elapsed_seconds": 2.913614,
+        "daughters": 4,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2876.759,
+        "elapsed_seconds": 2.876759,
         "daughters": 4,
         "error": ""
       }
@@ -838,20 +1030,26 @@
     "mask": "synthetic_dataset/subject008/mask8.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 611.837,
-        "elapsed_seconds": 0.611837,
+        "elapsed_ms": 988.369,
+        "elapsed_seconds": 0.988369,
         "daughters": 2,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 822.176,
-        "elapsed_seconds": 0.822176,
+        "elapsed_ms": 1399.68,
+        "elapsed_seconds": 1.39968,
         "daughters": 2,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1661.095,
-        "elapsed_seconds": 1.661095,
+        "elapsed_ms": 2803.203,
+        "elapsed_seconds": 2.803203,
+        "daughters": 2,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2867.069,
+        "elapsed_seconds": 2.867069,
         "daughters": 2,
         "error": ""
       }
@@ -864,20 +1062,26 @@
     "mask": "synthetic_dataset/subject009/mask9.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 619.286,
-        "elapsed_seconds": 0.619286,
+        "elapsed_ms": 1002.161,
+        "elapsed_seconds": 1.002161,
         "daughters": 2,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 850.993,
-        "elapsed_seconds": 0.850993,
+        "elapsed_ms": 1430.919,
+        "elapsed_seconds": 1.430919,
         "daughters": 2,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1677.527,
-        "elapsed_seconds": 1.677527,
+        "elapsed_ms": 2814.274,
+        "elapsed_seconds": 2.814274,
+        "daughters": 2,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 2783.84,
+        "elapsed_seconds": 2.78384,
         "daughters": 2,
         "error": ""
       }
@@ -890,20 +1094,26 @@
     "mask": "synthetic_dataset/subject010/mask10.nii",
     "models": {
       "baseline": {
-        "elapsed_ms": 730.298,
-        "elapsed_seconds": 0.730298,
+        "elapsed_ms": 1176.067,
+        "elapsed_seconds": 1.176067,
         "daughters": 1,
         "error": ""
       },
       "contact": {
-        "elapsed_ms": 957.636,
-        "elapsed_seconds": 0.957636,
+        "elapsed_ms": 1654.334,
+        "elapsed_seconds": 1.654334,
         "daughters": 1,
         "error": ""
       },
       "fusion": {
-        "elapsed_ms": 1923.907,
-        "elapsed_seconds": 1.923907,
+        "elapsed_ms": 3477.886,
+        "elapsed_seconds": 3.477886,
+        "daughters": 1,
+        "error": ""
+      },
+      "refined": {
+        "elapsed_ms": 3508.186,
+        "elapsed_seconds": 3.508186,
         "daughters": 1,
         "error": ""
       }
