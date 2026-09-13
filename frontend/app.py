@@ -133,10 +133,34 @@ st.markdown(
   h1, h2, h3 { font-family: Consolas, 'Courier New', monospace !important; letter-spacing: .015em; color: #f6edef !important; }
   h1 { font-size: 2.2rem !important; }
   [data-testid="stExpander"] { border: 1px solid #75515f; border-radius: 0; background: #272027; }
-  [data-testid="stTabs"] button { text-transform: uppercase; letter-spacing: .03em; }
-  [data-testid="stImage"] img { border: 1px solid #75515f; border-radius: 0; }
+  [data-testid="stMainBlockContainer"] [data-testid="stImage"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  [data-testid="stMainBlockContainer"] [data-testid="stImage"] img {
+    display: block;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    border: 1px solid #75515f;
+    border-radius: 0;
+  }
   [data-testid="stCaptionContainer"] { color: #d6bdc5 !important; }
   [data-testid="stCodeBlock"] { border: 1px solid #75515f; border-radius: 0; }
+  [data-testid="stDownloadButton"] button {
+    border: 1px solid #8a5d6d !important;
+    border-radius: 0 !important;
+    background: #30232a !important;
+    color: #f5e9ed !important;
+    padding: 7px 10px !important;
+    min-height: 0 !important;
+    font: 12px Consolas, 'Courier New', monospace !important;
+  }
+  [data-testid="stDownloadButton"] button:hover {
+    background: #49303b !important;
+    color: #f5e9ed !important;
+    border-color: #8a5d6d !important;
+  }
 </style>""",
     unsafe_allow_html=True,
 )
@@ -213,16 +237,8 @@ with st.sidebar:
         show_branches = st.checkbox(
             "Show branch markers",
             True,
-            help="Show the estimated opening, 5 mm seed, direction arrow, and radius ring.",
+            help="Show the estimated ostium, 5 mm seed, direction arrow, and radius ring.",
             disabled=not branch_names,
-        )
-
-with st.sidebar:
-    with st.expander("03 · VIEW", expanded=True):
-        viewer_mode = st.radio(
-            "Viewer",
-            ["Fast interactive", "Detailed VTK"],
-            help="Fast interactive lets you turn a sampled scan with the mouse, or pan with Shift + drag. Detailed VTK renders the CT volume and three cross-sections on the CPU.",
         )
 
 st.title("Find Your Daughter")
@@ -236,13 +252,22 @@ st.markdown(
 if detection_error:
     st.error(f"Detection failed: {detection_error}")
 
-if viewer_mode == "Fast interactive":
+panel = st.segmented_control(
+    "Panel",
+    ["Simple View", "Detailed View", "Results"],
+    default="Simple View",
+    label_visibility="collapsed",
+    width="stretch",
+    key="main_panel",
+)
+
+if panel == "Simple View":
     old_session = st.session_state.pop("vtk_session", None)
     if old_session is not None:
         old_session.close()
     st.session_state.pop("vtk_session_key", None)
     with st.sidebar:
-        with st.expander("04 · CT APPEARANCE", expanded=False):
+        with st.expander("03 · SIMPLE VIEW SETTINGS", expanded=False):
             frame = (
                 st.slider("Frame", 0, shape[3] - 1, 0, key="fast_frame")
                 if len(shape) == 4
@@ -274,8 +299,7 @@ if viewer_mode == "Fast interactive":
             show_mask = st.checkbox(
                 "Show aorta surface", True, disabled=case.mask is None, key="fast_mask"
             )
-    view_tab, results_tab = st.tabs(["3D VIEW", "RESULTS"])
-    with view_tab:
+    with st.container():
         with st.spinner("Preparing the scan view…"):
             payload = scene_payload(
                 case,
@@ -291,12 +315,12 @@ if viewer_mode == "Fast interactive":
             )
         components.html(scene_html(payload), height=604, scrolling=False)
         st.caption(
-            "The blue dot marks the opening; the teal arrow points into the branch; the pale teal ring shows its estimated radius. "
-            "This view samples the CT; use Detailed VTK to inspect the full volume."
+            "The blue dot marks the ostium; the teal arrow points into the branch; the pale teal ring shows its estimated radius. "
+            "This view samples the CT; use Detailed View to inspect the full volume."
         )
-else:
+elif panel == "Detailed View":
     with st.sidebar:
-        with st.expander("04 · CT APPEARANCE", expanded=False):
+        with st.expander("03 · DETAILED VIEW SETTINGS", expanded=False):
             frame = (
                 st.slider("Frame", 0, shape[3] - 1, 0, key="vtk_frame")
                 if len(shape) == 4
@@ -331,14 +355,14 @@ else:
                 "Show aorta surface", True, disabled=case.mask is None
             )
             mip = st.checkbox("Maximum intensity projection", False)
-        with st.expander("05 · VIEW ANGLE", expanded=False):
+        with st.expander("04 · VIEW ANGLE", expanded=False):
             azimuth = st.slider("Azimuth (degrees)", -180, 180, 30)
             elevation = st.slider("Elevation (degrees)", -90, 90, 25)
             zoom = st.slider("Zoom", 0.5, 2.5, 1.0, 0.1)
             focus_mask = st.checkbox(
                 "Focus camera on aorta", False, disabled=case.mask is None
             )
-        with st.expander("06 · CROSS-SECTIONS", expanded=True):
+        with st.expander("05 · CROSS-SECTIONS", expanded=True):
             show_slices = st.checkbox("Show three orthogonal slice panels", True)
             show_planes = st.checkbox("Show slice planes in 3D", True)
             plane_opacity = st.slider(
@@ -370,8 +394,7 @@ else:
                 else None
             )
 
-    view_tab, results_tab = st.tabs(["3D VIEW", "RESULTS"])
-    with view_tab:
+    with st.container():
         case_key = (image, mask, image_mtime, mask_mtime)
         view_key = (
             case_key,
@@ -475,7 +498,7 @@ else:
                 on_click="ignore",
             )
 
-with results_tab:
+if panel == "Results":
     st.subheader("Branch results")
     if prediction is not None:
         st.download_button(
@@ -497,8 +520,8 @@ with results_tab:
         )
         with st.popover("ⓘ Measurement guide"):
             st.write(
-                "The opening is where the branch meets the aorta. The seed is about 5 mm farther into the branch. "
-                "Positions use physical LPS coordinates in millimetres; direction is a unit vector pointing away from the aorta."
+                "The ostium is where the branch meets the aorta. The seed is about 5 mm farther into the branch. "
+                "Positions use physical coordinates in millimetres; direction is a unit vector pointing away from the aorta."
             )
         ordered = sorted(
             daughters, key=lambda item: item["instance_id"] != selected_branch
@@ -508,8 +531,8 @@ with results_tab:
             st.markdown(f"**{daughter['instance_id'].upper()}**")
             st.code(
                 f"parent       {daughter['parent_instance_id']}\n"
-                f"ostium LPS   {fmt(daughter['ostium_xyz_mm'])} mm\n"
-                f"seed LPS     {fmt(daughter['seed_xyz_mm'])} mm\n"
+                f"ostium       {fmt(daughter['ostium_xyz_mm'])} mm\n"
+                f"seed         {fmt(daughter['seed_xyz_mm'])} mm\n"
                 f"radius       {daughter['radius_mm']:.2f} mm\n"
                 f"direction    {fmt(daughter['direction_xyz'])} (unit)",
                 language=None,

@@ -19,14 +19,35 @@
   .legend span.aorta::before { background: #da5575; }
   .legend span.branch { color: #a8e9e8; }
   .legend span.branch::before { background: #54c6d3; }
+  canvas.branch-hover { cursor: pointer; }
+  .branch-detail { position: absolute; top: 48px; right: 16px; width: min(320px, calc(100% - 32px)); padding: 14px 16px; border: 1px solid #6dbce8; border-radius: 4px; background: #29232cee; box-shadow: 0 6px 20px #0008; color: #f0e7e9; pointer-events: auto; }
+  .branch-detail[hidden] { display: none; }
+  .branch-detail header { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid #75515f; padding-bottom: 8px; }
+  .branch-detail h2 { margin: 0; color: #a8e9e8; font-size: 15px; }
+  .branch-detail p { margin: 9px 0; line-height: 1.4; }
+  .branch-detail dl { display: grid; grid-template-columns: 100px 1fr; gap: 7px 10px; margin: 12px 0 0; }
+  .branch-detail dt { color: #d5b8c3; }
+  .branch-detail dd { margin: 0; color: #f0e7e9; text-align: right; }
+  .branch-detail .note { margin-bottom: 0; color: #d5b8c3; font-size: 11px; }
+  #close-branch { border: 0; padding: 2px 6px; background: transparent; font-size: 18px; }
   button { pointer-events: auto; border: 1px solid #8a5d6d; border-radius: 0; background: #30232a; color: #f5e9ed; padding: 7px 10px; cursor: pointer; font: inherit; }
   button:hover { background: #49303b; }
 </style>
 <div class="viewer">
   <canvas id="view" aria-label="Interactive 3D scan preview; drag to orbit, Shift and drag to pan, scroll to zoom"></canvas>
   <div class="top"><div class="legend"><span>CT</span><span class="aorta">Aorta</span><span class="branch">Branches</span></div><span class="point-count" id="point-count"></span></div>
-  <div class="bottom scan-note"><span>Scan view: RAS coordinates. Measurements: LPS coordinates.</span></div>
-  <div class="bottom"><span>Drag: turn scan · Shift + drag: pan · Scroll: zoom · Double-click: reset</span><button id="save" type="button">Save image</button></div>
+  <section class="branch-detail" id="branch-detail" aria-label="Branch details" hidden>
+    <header><h2 id="branch-title"></h2><button id="close-branch" type="button" aria-label="Close branch details">×</button></header>
+    <dl>
+      <dt>Parent</dt><dd id="branch-parent"></dd>
+      <dt>Ostium</dt><dd id="branch-opening"></dd>
+      <dt>Seed</dt><dd id="branch-seed"></dd>
+      <dt>Radius</dt><dd id="branch-radius"></dd>
+      <dt>Direction</dt><dd id="branch-direction"></dd>
+    </dl>
+  </section>
+  <div class="bottom scan-note"><span>Branch positions are physical coordinates in millimetres.</span></div>
+  <div class="bottom"><span>Drag: turn scan · Shift + drag: pan · Click branch: details · Scroll: zoom · Double-click: reset</span><button id="save" type="button">Save PNG</button></div>
 </div>
 <script>
 const scene = __SCENE_DATA__;
@@ -34,7 +55,8 @@ document.getElementById('point-count').textContent = `${scene.count_ct.toLocaleS
 const canvas = document.getElementById('view');
 const ctx = canvas.getContext('2d', {alpha: false, willReadFrequently: true});
 let yaw = 0.55, pitch = 0.36, zoom = 1, panX = 0, panY = 0;
-let dragging = false, panning = false, lastX = 0, lastY = 0, queued = false;
+let dragging = false, panning = false, moved = false, startX = 0, startY = 0, lastX = 0, lastY = 0, queued = false;
+let activeBranchId = null;
 const bg = [23, 20, 23];
 const edges = [];
 for (let a = 0; a < 8; a++) for (let b = a + 1; b < 8; b++) {
@@ -42,6 +64,53 @@ for (let a = 0; a < 8; a++) for (let b = a + 1; b < 8; b++) {
   if (bits === 1 || bits === 2 || bits === 4) edges.push([a, b]);
 }
 function schedule() { if (!queued) { queued = true; requestAnimationFrame(draw); } }
+function project(point, width = canvas.width, height = canvas.height) {
+  const sy = Math.sin(yaw), cy = Math.cos(yaw), sp = Math.sin(pitch), cp = Math.cos(pitch);
+  const scale = Math.min(width * .66, height * .82) * zoom;
+  const x = point[0], y = point[1], z = point[2];
+  return [width/2 + panX + (-sy*x + cy*y)*scale,
+          height/2 + panY - (-sp*cy*x - sp*sy*y + cp*z)*scale,
+          cp*cy*x + cp*sy*y + sp*z];
+}
+function segmentDistance(x, y, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const t = Math.max(0, Math.min(1, ((x-a[0])*dx + (y-a[1])*dy) / (dx*dx + dy*dy || 1)));
+  return Math.hypot(x - (a[0] + t*dx), y - (a[1] + t*dy));
+}
+function branchAt(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const x = (clientX - rect.left) * canvas.width / rect.width;
+  const y = (clientY - rect.top) * canvas.height / rect.height;
+  let nearest = null, distance = 10;
+  for (const branch of scene.branches) {
+    const opening = project(branch.ostium), seed = project(branch.seed), arrow = project(branch.arrow);
+    let candidate = Math.min(segmentDistance(x, y, opening, arrow),
+                             Math.hypot(x-opening[0], y-opening[1]),
+                             Math.hypot(x-seed[0], y-seed[1]));
+    for (let i = 1; i < branch.ring.length; i++) {
+      candidate = Math.min(candidate, segmentDistance(x, y, project(branch.ring[i-1]), project(branch.ring[i])));
+    }
+    if (candidate < distance) { nearest = branch; distance = candidate; }
+  }
+  return nearest;
+}
+function showBranch(branch) {
+  activeBranchId = branch.id;
+  const vector = values => values.map(value => Number(value).toFixed(2)).join(', ');
+  document.getElementById('branch-title').textContent = branch.id.toUpperCase();
+  document.getElementById('branch-parent').textContent = branch.parent_id;
+  document.getElementById('branch-opening').textContent = `${vector(branch.ostium_lps_mm)} mm`;
+  document.getElementById('branch-seed').textContent = `${vector(branch.seed_lps_mm)} mm`;
+  document.getElementById('branch-radius').textContent = `${Number(branch.radius_mm).toFixed(2)} mm`;
+  document.getElementById('branch-direction').textContent = vector(branch.direction_lps);
+  document.getElementById('branch-detail').hidden = false;
+  schedule();
+}
+document.getElementById('close-branch').addEventListener('click', () => {
+  document.getElementById('branch-detail').hidden = true;
+  activeBranchId = null;
+  schedule();
+});
 function draw() {
   queued = false;
   const width = Math.max(320, Math.round(canvas.clientWidth));
@@ -50,14 +119,6 @@ function draw() {
   const image = ctx.createImageData(width, height), pixels = image.data;
   for (let p = 0; p < pixels.length; p += 4) { pixels[p] = bg[0]; pixels[p+1] = bg[1]; pixels[p+2] = bg[2]; pixels[p+3] = 255; }
   const depth = new Float32Array(width * height); depth.fill(-Infinity);
-  const sy = Math.sin(yaw), cy = Math.cos(yaw), sp = Math.sin(pitch), cp = Math.cos(pitch);
-  const scale = Math.min(width * .66, height * .82) * zoom;
-  function project(point) {
-    const x = point[0], y = point[1], z = point[2];
-    return [width/2 + panX + (-sy*x + cy*y)*scale,
-            height/2 + panY - (-sp*cy*x - sp*sy*y + cp*z)*scale,
-            cp*cy*x + cp*sy*y + sp*z];
-  }
   function plot(point, color, radius) {
     const [px, py, z] = project(point), cx = Math.round(px), cy = Math.round(py);
     for (let dy = -radius; dy <= radius; dy++) for (let dx = -radius; dx <= radius; dx++) {
@@ -81,7 +142,8 @@ function draw() {
     ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
   }
   for (const branch of scene.branches) {
-    const selected = !scene.selected_branch || branch.id === scene.selected_branch;
+    const selected = activeBranchId ? branch.id === activeBranchId :
+                     (!scene.selected_branch || branch.id === scene.selected_branch);
     const o = project(branch.ostium), s = project(branch.seed), a = project(branch.arrow);
     ctx.save();
     ctx.globalAlpha = selected ? 1 : .38;
@@ -113,13 +175,18 @@ function draw() {
 }
 canvas.addEventListener('pointerdown', event => {
   dragging = true; panning = event.shiftKey;
+  moved = false;
   canvas.classList.toggle('panning', panning);
-  lastX = event.clientX; lastY = event.clientY;
+  startX = lastX = event.clientX; startY = lastY = event.clientY;
   canvas.setPointerCapture(event.pointerId);
 });
 canvas.addEventListener('pointermove', event => {
-  if (!dragging) return;
+  if (!dragging) {
+    canvas.classList.toggle('branch-hover', !!branchAt(event.clientX, event.clientY));
+    return;
+  }
   const dx = event.clientX - lastX, dy = event.clientY - lastY;
+  if (Math.hypot(event.clientX - startX, event.clientY - startY) > 5) moved = true;
   if (panning) { panX += dx; panY += dy; }
   else {
     yaw += dx*.008;
@@ -128,7 +195,13 @@ canvas.addEventListener('pointermove', event => {
   lastX = event.clientX; lastY = event.clientY; schedule();
 });
 function endDrag() { dragging = false; panning = false; canvas.classList.remove('panning'); }
-canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointerup', event => {
+  if (dragging && !panning && !moved) {
+    const branch = branchAt(event.clientX, event.clientY);
+    if (branch) showBranch(branch);
+  }
+  endDrag();
+});
 canvas.addEventListener('pointercancel', endDrag);
 canvas.addEventListener('wheel', event => { event.preventDefault(); zoom = Math.max(.5, Math.min(3, zoom*Math.exp(-event.deltaY*.001))); schedule(); }, {passive:false});
 canvas.addEventListener('dblclick', () => { yaw=.55; pitch=.36; zoom=1; panX=0; panY=0; schedule(); });

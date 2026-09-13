@@ -72,6 +72,10 @@ class BrowserRenderTest(unittest.TestCase):
         radii = np.linalg.norm(ring - branch["seed"], axis=1) * span
         np.testing.assert_allclose(radii, 3, atol=0.01)
         np.testing.assert_allclose(ring[:, 0], branch["seed"][0], atol=1e-4)
+        self.assertEqual(branch["ostium_lps_mm"], [-6, -9, 12])
+        self.assertEqual(branch["seed_lps_mm"], [-11, -9, 12])
+        self.assertEqual(branch["direction_lps"], [-1, 0, 0])
+        self.assertEqual(branch["radius_mm"], 3)
         self.assertEqual(scene["selected_branch"], "branch_001")
 
     def test_vtk_plane_and_threshold_settings_reach_session(self):

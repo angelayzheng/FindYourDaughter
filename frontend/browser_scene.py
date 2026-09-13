@@ -96,7 +96,11 @@ def scene_payload(case: ScanCase, *, frame: int = 0, window: float = 400,
             arrow = seed + direction * max(2.0, radius * 1.5)
             branches.append({"id": daughter["instance_id"], "ostium": normalize(ostium),
                              "seed": normalize(seed), "arrow": normalize(arrow),
-                             "ring": normalize(ring), "radius_mm": radius})
+                             "ring": normalize(ring), "radius_mm": radius,
+                             "parent_id": daughter.get("parent_instance_id", "aorta"),
+                             "ostium_lps_mm": daughter["ostium_xyz_mm"],
+                             "seed_lps_mm": daughter["seed_xyz_mm"],
+                             "direction_lps": daughter["direction_xyz"]})
 
     return {"ct": ct_points, "mask": mask_points, "branches": branches,
             "selected_branch": selected_branch,
