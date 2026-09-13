@@ -1,0 +1,912 @@
+[
+  {
+    "dataset": "dataset",
+    "case_id": "subject001",
+    "image": "dataset/subject001/orig1.nii",
+    "mask": "dataset/subject001/mask1.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 681.585,
+        "elapsed_seconds": 0.681585,
+        "daughters": 6,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 435.081,
+        "elapsed_seconds": 0.435081,
+        "daughters": 2,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 914.636,
+        "elapsed_seconds": 0.914636,
+        "daughters": 7,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject002",
+    "image": "dataset/subject002/orig2.nii",
+    "mask": "dataset/subject002/mask2.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 549.747,
+        "elapsed_seconds": 0.549747,
+        "daughters": 4,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 716.093,
+        "elapsed_seconds": 0.716093,
+        "daughters": 4,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1403.246,
+        "elapsed_seconds": 1.403246,
+        "daughters": 4,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject003",
+    "image": "dataset/subject003/orig3.nii",
+    "mask": "dataset/subject003/mask3.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 935.675,
+        "elapsed_seconds": 0.935675,
+        "daughters": 3,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 1157.924,
+        "elapsed_seconds": 1.157924,
+        "daughters": 6,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 2214.771,
+        "elapsed_seconds": 2.214771,
+        "daughters": 6,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject004",
+    "image": "dataset/subject004/orig4.nii",
+    "mask": "dataset/subject004/mask4.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 595.181,
+        "elapsed_seconds": 0.595181,
+        "daughters": 4,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 871.591,
+        "elapsed_seconds": 0.871591,
+        "daughters": 6,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1635.398,
+        "elapsed_seconds": 1.635398,
+        "daughters": 7,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject005",
+    "image": "dataset/subject005/orig5.nii",
+    "mask": "dataset/subject005/mask5.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 436.951,
+        "elapsed_seconds": 0.436951,
+        "daughters": 6,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 565.711,
+        "elapsed_seconds": 0.565711,
+        "daughters": 6,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1113.847,
+        "elapsed_seconds": 1.113847,
+        "daughters": 8,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject006",
+    "image": "dataset/subject006/orig6.nii",
+    "mask": "dataset/subject006/mask6.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 799.803,
+        "elapsed_seconds": 0.799803,
+        "daughters": 3,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 1076.339,
+        "elapsed_seconds": 1.076339,
+        "daughters": 6,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 2115.284,
+        "elapsed_seconds": 2.115284,
+        "daughters": 8,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject007",
+    "image": "dataset/subject007/orig7.nii",
+    "mask": "dataset/subject007/mask7.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 331.314,
+        "elapsed_seconds": 0.331314,
+        "daughters": 6,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 429.598,
+        "elapsed_seconds": 0.429598,
+        "daughters": 0,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 837.539,
+        "elapsed_seconds": 0.837539,
+        "daughters": 6,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject008",
+    "image": "dataset/subject008/orig8.nii",
+    "mask": "dataset/subject008/mask8.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 1192.615,
+        "elapsed_seconds": 1.192615,
+        "daughters": 4,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 1595.976,
+        "elapsed_seconds": 1.595976,
+        "daughters": 6,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 3063.073,
+        "elapsed_seconds": 3.063073,
+        "daughters": 7,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject009",
+    "image": "dataset/subject009/orig9.nii",
+    "mask": "dataset/subject009/mask9.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 501.45,
+        "elapsed_seconds": 0.50145,
+        "daughters": 4,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 669.365,
+        "elapsed_seconds": 0.669365,
+        "daughters": 8,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1303.748,
+        "elapsed_seconds": 1.303748,
+        "daughters": 8,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject010",
+    "image": "dataset/subject010/orig10.nii",
+    "mask": "dataset/subject010/mask10.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 677.15,
+        "elapsed_seconds": 0.67715,
+        "daughters": 3,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 892.083,
+        "elapsed_seconds": 0.892083,
+        "daughters": 5,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1734.006,
+        "elapsed_seconds": 1.734006,
+        "daughters": 6,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject011",
+    "image": "dataset/subject011/orig11.nii",
+    "mask": "dataset/subject011/mask11.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 385.908,
+        "elapsed_seconds": 0.385908,
+        "daughters": 5,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 498.971,
+        "elapsed_seconds": 0.498971,
+        "daughters": 6,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 983.439,
+        "elapsed_seconds": 0.983439,
+        "daughters": 9,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject012",
+    "image": "dataset/subject012/orig12.nii",
+    "mask": "dataset/subject012/mask12.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 563.69,
+        "elapsed_seconds": 0.56369,
+        "daughters": 5,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 646.13,
+        "elapsed_seconds": 0.64613,
+        "daughters": 6,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1287.299,
+        "elapsed_seconds": 1.287299,
+        "daughters": 6,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject013",
+    "image": "dataset/subject013/orig13.nii",
+    "mask": "dataset/subject013/mask13.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 389.469,
+        "elapsed_seconds": 0.389469,
+        "daughters": 8,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 465.117,
+        "elapsed_seconds": 0.465117,
+        "daughters": 7,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 912.828,
+        "elapsed_seconds": 0.912828,
+        "daughters": 11,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject014",
+    "image": "dataset/subject014/orig14.nii",
+    "mask": "dataset/subject014/mask14.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 571.275,
+        "elapsed_seconds": 0.571275,
+        "daughters": 5,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 719.814,
+        "elapsed_seconds": 0.719814,
+        "daughters": 4,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1367.45,
+        "elapsed_seconds": 1.36745,
+        "daughters": 5,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject015",
+    "image": "dataset/subject015/orig15.nii",
+    "mask": "dataset/subject015/mask15.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 765.859,
+        "elapsed_seconds": 0.765859,
+        "daughters": 6,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 1012.898,
+        "elapsed_seconds": 1.012898,
+        "daughters": 8,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1987.744,
+        "elapsed_seconds": 1.987744,
+        "daughters": 11,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject016",
+    "image": "dataset/subject016/orig16.nii",
+    "mask": "dataset/subject016/mask16.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 218.718,
+        "elapsed_seconds": 0.218718,
+        "daughters": 5,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 321.91,
+        "elapsed_seconds": 0.32191,
+        "daughters": 0,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 528.058,
+        "elapsed_seconds": 0.528058,
+        "daughters": 5,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject017",
+    "image": "dataset/subject017/orig17.nii",
+    "mask": "dataset/subject017/mask17.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 104.947,
+        "elapsed_seconds": 0.104947,
+        "daughters": 0,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 110.502,
+        "elapsed_seconds": 0.110502,
+        "daughters": 1,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 142.276,
+        "elapsed_seconds": 0.142276,
+        "daughters": 1,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject018",
+    "image": "dataset/subject018/orig18.nii",
+    "mask": "dataset/subject018/mask18.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 872.102,
+        "elapsed_seconds": 0.872102,
+        "daughters": 9,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 1381.647,
+        "elapsed_seconds": 1.381647,
+        "daughters": 2,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 2290.035,
+        "elapsed_seconds": 2.290035,
+        "daughters": 10,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject019",
+    "image": "dataset/subject019/orig19.nii",
+    "mask": "dataset/subject019/mask19.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 123.732,
+        "elapsed_seconds": 0.123732,
+        "daughters": 0,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 110.654,
+        "elapsed_seconds": 0.110654,
+        "daughters": 1,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 151.252,
+        "elapsed_seconds": 0.151252,
+        "daughters": 1,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject020",
+    "image": "dataset/subject020/orig20.nii",
+    "mask": "dataset/subject020/mask20.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 140.568,
+        "elapsed_seconds": 0.140568,
+        "daughters": 0,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 150.422,
+        "elapsed_seconds": 0.150422,
+        "daughters": 1,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 202.761,
+        "elapsed_seconds": 0.202761,
+        "daughters": 1,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject021",
+    "image": "dataset/subject021/orig21.nii",
+    "mask": "dataset/subject021/mask21.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 132.347,
+        "elapsed_seconds": 0.132347,
+        "daughters": 2,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 165.068,
+        "elapsed_seconds": 0.165068,
+        "daughters": 6,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 269.34,
+        "elapsed_seconds": 0.26934,
+        "daughters": 7,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject022",
+    "image": "dataset/subject022/orig22.nii",
+    "mask": "dataset/subject022/mask22.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 244.538,
+        "elapsed_seconds": 0.244538,
+        "daughters": 5,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 294.73,
+        "elapsed_seconds": 0.29473,
+        "daughters": 7,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 487.955,
+        "elapsed_seconds": 0.487955,
+        "daughters": 9,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject023",
+    "image": "dataset/subject023/orig23.nii",
+    "mask": "dataset/subject023/mask23.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 95.308,
+        "elapsed_seconds": 0.095308,
+        "daughters": 1,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 102.999,
+        "elapsed_seconds": 0.102999,
+        "daughters": 1,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 143.184,
+        "elapsed_seconds": 0.143184,
+        "daughters": 1,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject024",
+    "image": "dataset/subject024/orig24.nii",
+    "mask": "dataset/subject024/mask24.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 226.685,
+        "elapsed_seconds": 0.226685,
+        "daughters": 7,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 348.993,
+        "elapsed_seconds": 0.348993,
+        "daughters": 0,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 566.849,
+        "elapsed_seconds": 0.566849,
+        "daughters": 6,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "dataset",
+    "case_id": "subject025",
+    "image": "dataset/subject025/orig25.nii",
+    "mask": "dataset/subject025/mask25.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 628.549,
+        "elapsed_seconds": 0.628549,
+        "daughters": 10,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 773.195,
+        "elapsed_seconds": 0.773195,
+        "daughters": 5,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1441.64,
+        "elapsed_seconds": 1.44164,
+        "daughters": 12,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "synthetic_dataset",
+    "case_id": "subject001",
+    "image": "synthetic_dataset/subject001/orig1.nii",
+    "mask": "synthetic_dataset/subject001/mask1.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 620.525,
+        "elapsed_seconds": 0.620525,
+        "daughters": 2,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 820.92,
+        "elapsed_seconds": 0.82092,
+        "daughters": 2,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1631.733,
+        "elapsed_seconds": 1.631733,
+        "daughters": 3,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "synthetic_dataset",
+    "case_id": "subject002",
+    "image": "synthetic_dataset/subject002/orig2.nii",
+    "mask": "synthetic_dataset/subject002/mask2.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 653.508,
+        "elapsed_seconds": 0.653508,
+        "daughters": 3,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 872.24,
+        "elapsed_seconds": 0.87224,
+        "daughters": 3,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1756.189,
+        "elapsed_seconds": 1.756189,
+        "daughters": 3,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "synthetic_dataset",
+    "case_id": "subject003",
+    "image": "synthetic_dataset/subject003/orig3.nii",
+    "mask": "synthetic_dataset/subject003/mask3.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 711.835,
+        "elapsed_seconds": 0.711835,
+        "daughters": 2,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 952.312,
+        "elapsed_seconds": 0.952312,
+        "daughters": 2,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1894.095,
+        "elapsed_seconds": 1.894095,
+        "daughters": 2,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "synthetic_dataset",
+    "case_id": "subject004",
+    "image": "synthetic_dataset/subject004/orig4.nii",
+    "mask": "synthetic_dataset/subject004/mask4.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 647.727,
+        "elapsed_seconds": 0.647727,
+        "daughters": 1,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 861.796,
+        "elapsed_seconds": 0.861796,
+        "daughters": 1,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1717.583,
+        "elapsed_seconds": 1.717583,
+        "daughters": 1,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "synthetic_dataset",
+    "case_id": "subject005",
+    "image": "synthetic_dataset/subject005/orig5.nii",
+    "mask": "synthetic_dataset/subject005/mask5.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 640.056,
+        "elapsed_seconds": 0.640056,
+        "daughters": 3,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 873.423,
+        "elapsed_seconds": 0.873423,
+        "daughters": 3,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1744.313,
+        "elapsed_seconds": 1.744313,
+        "daughters": 3,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "synthetic_dataset",
+    "case_id": "subject006",
+    "image": "synthetic_dataset/subject006/orig6.nii",
+    "mask": "synthetic_dataset/subject006/mask6.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 685.99,
+        "elapsed_seconds": 0.68599,
+        "daughters": 2,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 910.154,
+        "elapsed_seconds": 0.910154,
+        "daughters": 2,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1821.322,
+        "elapsed_seconds": 1.821322,
+        "daughters": 2,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "synthetic_dataset",
+    "case_id": "subject007",
+    "image": "synthetic_dataset/subject007/orig7.nii",
+    "mask": "synthetic_dataset/subject007/mask7.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 616.089,
+        "elapsed_seconds": 0.616089,
+        "daughters": 4,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 841.06,
+        "elapsed_seconds": 0.84106,
+        "daughters": 4,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1685.634,
+        "elapsed_seconds": 1.685634,
+        "daughters": 4,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "synthetic_dataset",
+    "case_id": "subject008",
+    "image": "synthetic_dataset/subject008/orig8.nii",
+    "mask": "synthetic_dataset/subject008/mask8.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 611.837,
+        "elapsed_seconds": 0.611837,
+        "daughters": 2,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 822.176,
+        "elapsed_seconds": 0.822176,
+        "daughters": 2,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1661.095,
+        "elapsed_seconds": 1.661095,
+        "daughters": 2,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "synthetic_dataset",
+    "case_id": "subject009",
+    "image": "synthetic_dataset/subject009/orig9.nii",
+    "mask": "synthetic_dataset/subject009/mask9.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 619.286,
+        "elapsed_seconds": 0.619286,
+        "daughters": 2,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 850.993,
+        "elapsed_seconds": 0.850993,
+        "daughters": 2,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1677.527,
+        "elapsed_seconds": 1.677527,
+        "daughters": 2,
+        "error": ""
+      }
+    }
+  },
+  {
+    "dataset": "synthetic_dataset",
+    "case_id": "subject010",
+    "image": "synthetic_dataset/subject010/orig10.nii",
+    "mask": "synthetic_dataset/subject010/mask10.nii",
+    "models": {
+      "baseline": {
+        "elapsed_ms": 730.298,
+        "elapsed_seconds": 0.730298,
+        "daughters": 1,
+        "error": ""
+      },
+      "contact": {
+        "elapsed_ms": 957.636,
+        "elapsed_seconds": 0.957636,
+        "daughters": 1,
+        "error": ""
+      },
+      "fusion": {
+        "elapsed_ms": 1923.907,
+        "elapsed_seconds": 1.923907,
+        "daughters": 1,
+        "error": ""
+      }
+    }
+  }
+]
