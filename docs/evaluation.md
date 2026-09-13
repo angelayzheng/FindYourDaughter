@@ -81,47 +81,54 @@ run serially on CPU; inference timing includes any first-use lazy imports but
 excludes matching, hashing, and output writes. It is not a four-core affinity
 benchmark or an official runtime measurement.
 
-## Initial result
+## Measured results
 
-The table below records the initial baseline/contact comparison. The optional
-[fusion detector](fusion_detection.md) now runs through the same scorer: 11/19
-draft matches from 19 predictions, with 8 unmatched predictions. `--detector all`
-includes all three algorithms; use explicit detector selections to reproduce
-individual runs. Fusion remains experimental and has lower draft agreement
-precision than contact.
+All three detectors, including the experimental [fusion detector](fusion_detection.md),
+were evaluated on 2026-09-13 with default settings, the supplied five-case draft
+set, and a 3 mm tolerance. Baseline and contact reproduced the initial results.
+The command was:
 
-With the supplied five-case draft set, unchanged detectors, and a 3 mm tolerance:
+```powershell
+python scripts/evaluate_detectors.py --detector all --output-dir nifti_previews/evaluation_20260913
+```
 
-| Measurement | Baseline | Contact |
-| --- | ---: | ---: |
-| Matched references | 5 / 19 | 10 / 19 |
-| Predictions | 8 | 16 |
-| Unmatched predictions | 3 | 6 |
-| Unmatched references | 14 | 9 |
-| Reference precision | 62.5% | 62.5% |
-| Reference recall | 26.3% | 52.6% |
-| Reference F1 | 37.0% | 57.1% |
-| Mean ostium error, matched only (mm) | 1.27 | 0.96 |
-| Mean seed error, matched only (mm) | 0.99 | 0.95 |
-| Mean direction error, matched only (degrees) | 12.51 | 14.39 |
-| Seeds in their matched label | 5 / 5 | 10 / 10 |
+The local `nifti_previews/evaluation_20260913/report.json` records full metrics,
+input and implementation hashes, and dependency versions. Generated reports and
+predictions remain ignored by version control.
+
+| Measurement | Baseline | Contact | Fusion |
+| --- | ---: | ---: | ---: |
+| Matched references | 5 / 19 | 10 / 19 | 11 / 19 |
+| Predictions | 8 | 16 | 19 |
+| Unmatched predictions | 3 | 6 | 8 |
+| Unmatched references | 14 | 9 | 8 |
+| Reference precision | 62.5% | 62.5% | 57.9% |
+| Reference recall | 26.3% | 52.6% | 57.9% |
+| Reference F1 | 37.0% | 57.1% | 57.9% |
+| Mean ostium error, matched only (mm) | 1.27 | 0.96 | 1.15 |
+| Mean seed error, matched only (mm) | 0.99 | 0.95 | 1.00 |
+| Mean direction error, matched only (degrees) | 12.51 | 14.39 | 14.24 |
+| Seeds in their matched label | 5 / 5 | 10 / 10 | 11 / 11 |
 
 Only three of the 19 annotations have usable numeric seed-radius references;
 each detector matches just one of those. Radius error is therefore available
-for only one pair per detector (0.15 mm baseline, 0.31 mm contact), insufficient
-for a general radius-quality comparison. Matched sets differ between algorithms,
+for only one pair per detector (0.15 mm baseline, 0.31 mm contact, 0.29 mm fusion),
+insufficient for a general radius-quality comparison. Matched sets differ between algorithms,
 so the other mean errors also describe different subsets.
 
-| Case | Draft references | Baseline matches / predictions | Contact matches / predictions |
-| --- | ---: | ---: | ---: |
-| 19 | 3 | 0 / 0 | 1 / 1 |
-| 20 | 4 | 0 / 0 | 1 / 1 |
-| 21 | 3 | 2 / 2 | 1 / 6 |
-| 22 | 6 | 3 / 5 | 6 / 7 |
-| 23 | 3 | 0 / 1 | 1 / 1 |
+| Case | Draft references | Baseline matches / predictions | Contact matches / predictions | Fusion matches / predictions |
+| --- | ---: | ---: | ---: | ---: |
+| 19 | 3 | 0 / 0 | 1 / 1 | 1 / 1 |
+| 20 | 4 | 0 / 0 | 1 / 1 | 1 / 1 |
+| 21 | 3 | 2 / 2 | 1 / 6 | 2 / 7 |
+| 22 | 6 | 3 / 5 | 6 / 7 | 6 / 9 |
+| 23 | 3 | 0 / 1 | 1 / 1 | 1 / 1 |
 
 Contact matches more draft branches overall but performs worse on case 21 and
-produces more unmatched candidates. Both sets completed without failures.
+produces more unmatched candidates. Fusion matches one more reference than
+contact on case 21, but adds two unmatched predictions on case 22. Its draft
+recall and F1 are higher than contact's, while its precision is lower. All three
+detectors completed all five cases without failures.
 Review unmatched candidates and missed references, particularly case 21, before
 using this set to tune detection or claiming improved anatomical accuracy.
 
