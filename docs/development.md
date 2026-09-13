@@ -155,7 +155,7 @@ geometry to a Canvas 2D viewer. Detected LPS points and directions are
 converted to RAS for overlay: a blue dot marks the ostium, a teal arrow gives
 the direction, and a pale teal ring marks the seed and estimated radius
 perpendicular to that vector. The ring is a measurement glyph, not a segmented
-vessel surface. Drag to orbit, scroll to zoom, double-click to
+vessel surface. Drag to orbit, Shift + drag to pan, scroll to zoom, double-click to
 reset, or save the current view as PNG. Camera motion does not rerun Streamlit
 or render a new server PNG. Window, level, sampling, and visibility changes
 rebuild the sampled scene. This is a point preview, not volumetric CT rendering;
