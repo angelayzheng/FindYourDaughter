@@ -40,6 +40,18 @@ For example, run the current valid baseline against a local case with:
 python run.py --image dataset/subject001/orig1.nii --aorta-mask dataset/subject001/mask1.nii --output prediction.json
 ```
 
+For developer convenience, a subject directory can be used instead. The CLI
+discovers one CT image (`orig*`, `image*`, or `ct*`) and one neighboring mask,
+including `.nii.gz` files and gzip data with a `.nii` name:
+
+```powershell
+python run.py --subject dataset/subject001 --output prediction.json
+```
+
+The explicit `--image` and `--aorta-mask` form remains the evaluator contract.
+Both forms validate the final JSON envelope before writing it, including unique
+daughter IDs, finite physical coordinates, positive radii, and unit directions.
+
 The baseline validates input geometry and writes candidate ostia, seeds 5 mm
 along each traced branch, radii, and directions in physical LPS coordinates.
 An empty `daughters` list means no candidates passed the current filters.
