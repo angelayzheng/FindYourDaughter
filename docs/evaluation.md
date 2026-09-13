@@ -8,7 +8,7 @@ python scripts/evaluate_detectors.py
 
 This reads `eval_set/case_*/` and writes `nifti_previews/evaluation/report.json`,
 `summary.md`, and separate prediction/diagnostic JSON files under `baseline/`,
-`contact/`, and `fusion/`. The runner performs no training or parameter tuning;
+`contact/`, `fusion/`, and `refined/`. The runner performs no training or parameter tuning;
 no new dependencies or network access are involved. The reference files are read only, and output inside the
 reference dataset is rejected. The required `run.py` command is unchanged.
 
@@ -83,54 +83,78 @@ benchmark or an official runtime measurement.
 
 ## Measured results
 
-All three detectors, including the experimental [fusion detector](fusion_detection.md),
+All four detectors, including the experimental [refined detector](refined_detection.md),
 were evaluated on 2026-09-13 with default settings, the supplied five-case draft
-set, and a 3 mm tolerance. Baseline and contact reproduced the initial results.
+set, and a 3 mm tolerance. Baseline, contact, and fusion predictions are identical
+to their saved results before refinement; their implementations and the default
+selection remain unchanged. `refined` is a separate opt-in algorithm.
 The command was:
 
 ```powershell
-python scripts/evaluate_detectors.py --detector all --output-dir nifti_previews/evaluation_20260913
+python scripts/evaluate_detectors.py --detector all --output-dir nifti_previews/improvement_refined
 ```
 
-The local `nifti_previews/evaluation_20260913/report.json` records full metrics,
+The local `nifti_previews/improvement_refined/report.json` records full metrics,
 input and implementation hashes, and dependency versions. Generated reports and
 predictions remain ignored by version control.
 
-| Measurement | Baseline | Contact | Fusion |
-| --- | ---: | ---: | ---: |
-| Matched references | 5 / 19 | 10 / 19 | 11 / 19 |
-| Predictions | 8 | 16 | 19 |
-| Unmatched predictions | 3 | 6 | 8 |
-| Unmatched references | 14 | 9 | 8 |
-| Reference precision | 62.5% | 62.5% | 57.9% |
-| Reference recall | 26.3% | 52.6% | 57.9% |
-| Reference F1 | 37.0% | 57.1% | 57.9% |
-| Mean ostium error, matched only (mm) | 1.27 | 0.96 | 1.15 |
-| Mean seed error, matched only (mm) | 0.99 | 0.95 | 1.00 |
-| Mean direction error, matched only (degrees) | 12.51 | 14.39 | 14.24 |
-| Seeds in their matched label | 5 / 5 | 10 / 10 | 11 / 11 |
+| Measurement | Baseline | Contact | Fusion | Refined |
+| --- | ---: | ---: | ---: | ---: |
+| Matched references | 5 / 19 | 10 / 19 | 11 / 19 | 13 / 19 |
+| Predictions | 8 | 16 | 19 | 17 |
+| Unmatched predictions | 3 | 6 | 8 | 4 |
+| Unmatched references | 14 | 9 | 8 | 6 |
+| Reference precision | 62.5% | 62.5% | 57.9% | 76.5% |
+| Reference recall | 26.3% | 52.6% | 57.9% | 68.4% |
+| Reference F1 | 37.0% | 57.1% | 57.9% | 72.2% |
+| Mean ostium error, matched only (mm) | 1.27 | 0.96 | 1.15 | 1.15 |
+| Mean seed error, matched only (mm) | 0.99 | 0.95 | 1.00 | 0.99 |
+| Mean direction error, matched only (degrees) | 12.51 | 14.39 | 14.24 | 14.39 |
+| Seeds in their matched label | 5 / 5 | 10 / 10 | 11 / 11 | 13 / 13 |
 
 Only three of the 19 annotations have usable numeric seed-radius references;
-each detector matches just one of those. Radius error is therefore available
-for only one pair per detector (0.15 mm baseline, 0.31 mm contact, 0.29 mm fusion),
-insufficient for a general radius-quality comparison. Matched sets differ between algorithms,
+baseline, contact, and fusion each match just one of those (radius errors of
+0.15, 0.31, and 0.29 mm, respectively). Refined matches two, with a mean absolute
+radius error of 0.21 mm. These samples are insufficient for a general
+radius-quality comparison. Matched sets differ between algorithms,
 so the other mean errors also describe different subsets.
 
-| Case | Draft references | Baseline matches / predictions | Contact matches / predictions | Fusion matches / predictions |
-| --- | ---: | ---: | ---: | ---: |
-| 19 | 3 | 0 / 0 | 1 / 1 | 1 / 1 |
-| 20 | 4 | 0 / 0 | 1 / 1 | 1 / 1 |
-| 21 | 3 | 2 / 2 | 1 / 6 | 2 / 7 |
-| 22 | 6 | 3 / 5 | 6 / 7 | 6 / 9 |
-| 23 | 3 | 0 / 1 | 1 / 1 | 1 / 1 |
+| Case | Draft references | Baseline matches / predictions | Contact matches / predictions | Fusion matches / predictions | Refined matches / predictions |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 19 | 3 | 0 / 0 | 1 / 1 | 1 / 1 | 1 / 1 |
+| 20 | 4 | 0 / 0 | 1 / 1 | 1 / 1 | 2 / 2 |
+| 21 | 3 | 2 / 2 | 1 / 6 | 2 / 7 | 3 / 7 |
+| 22 | 6 | 3 / 5 | 6 / 7 | 6 / 9 | 6 / 6 |
+| 23 | 3 | 0 / 1 | 1 / 1 | 1 / 1 | 1 / 1 |
 
-Contact matches more draft branches overall but performs worse on case 21 and
-produces more unmatched candidates. Fusion matches one more reference than
-contact on case 21, but adds two unmatched predictions on case 22. Its draft
-recall and F1 are higher than contact's, while its precision is lower. All three
-detectors completed all five cases without failures.
-Review unmatched candidates and missed references, particularly case 21, before
-using this set to tune detection or claiming improved anatomical accuracy.
+Refined recovers a parent-crossing origin connection in case 20, selects a better
+localized observation of an existing path in case 21, and rejects three unsupported
+or cropped-continuation proposals in case 22. All four remaining unmatched
+predictions are in case 21. All detectors completed all five cases without failures.
+The draft cases informed these changes and are development data, not a holdout.
+See the [specific failure analysis and synthetic validation](refined_detection.md).
+
+## Per-branch error review
+
+Export scored assignments and nearest-contact diagnostic evidence without
+rerunning detection or changing references:
+
+```powershell
+python scripts/review_detection_errors.py --report nifti_previews/improvement_refined/report.json --detector refined --output-dir nifti_previews/improvement_refined/review --previews
+```
+
+This writes `review.csv`, `review.json`, and optional CT preview pages. CSV rows
+include matched measurement errors, every unmatched reference, and every
+unmatched prediction. JSON retains candidate measurements and contact rejection
+records. Input hashes must still match the saved evaluation report. A nearest
+contact is a diagnostic clue; it is not automatically the same anatomical branch.
+Baseline exposes aggregate rejection counts, so its exact per-reference failure
+stage cannot always be recovered. Failed cases are listed separately.
+
+Omit `--previews` for a backend-only export; preview rendering uses the existing
+matplotlib visualization dependency and currently requires fusion/refined path
+diagnostics. Previews show three-voxel slabs with projected paths, not a full 3-D
+adjudication. Review all projections and the original CT before assigning anatomy.
 
 ## Tests and implementation
 

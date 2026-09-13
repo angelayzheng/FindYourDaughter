@@ -1,6 +1,6 @@
 """Explicit algorithm selection. The original baseline remains the default."""
 
-DETECTOR_NAMES = ("baseline", "contact", "fusion")
+DETECTOR_NAMES = ("baseline", "contact", "fusion", "refined")
 
 
 def detect(image, aorta_mask, *, detector: str = "baseline"):
@@ -14,6 +14,9 @@ def detect(image, aorta_mask, *, detector: str = "baseline"):
     elif detector == "fusion":
         from backend.fusion_detection import detect_fusion
         result = detect_fusion(image, aorta_mask)
+    elif detector == "refined":
+        from backend.refined_detection import detect_refined
+        result = detect_refined(image, aorta_mask)
     else:
         raise ValueError(f"Unknown detector {detector!r}; choose from {DETECTOR_NAMES}")
     result.diagnostics["detector"] = detector

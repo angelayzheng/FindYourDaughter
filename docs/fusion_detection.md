@@ -18,7 +18,8 @@ python scripts/evaluate_detectors.py --detector all --output-dir nifti_previews/
 The native viewer retains its existing controls and labels the selected method.
 Fusion screenshots default to `nifti_previews/<case>_fusion_detection_3d.png`;
 static previews default to `nifti_previews/detection/fusion/`. The evaluation
-registry now includes all three algorithms. Generated files remain ignored.
+registry includes baseline, contact, fusion, and the separate
+[refined detector](refined_detection.md). Fusion itself is unchanged. Generated files remain ignored.
 No dependencies, network access, or changes to the evaluator JSON are required.
 
 ## Evidence and selection

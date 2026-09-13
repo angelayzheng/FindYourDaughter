@@ -2,7 +2,8 @@
 
 Branchseed Challenge submission. The CPU backend proposes direct daughter
 arteries from CT and a supplied parent-aorta mask. The original baseline remains
-the default; [contact](docs/contact_detection.md) and [fusion](docs/fusion_detection.md)
+the default; [contact](docs/contact_detection.md), [fusion](docs/fusion_detection.md),
+and [refined](docs/refined_detection.md)
 alternatives are available. [Draft-reference evaluation](docs/evaluation.md) is supported;
 expert-validated detection accuracy remains unmeasured.
 
